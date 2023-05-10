@@ -37,6 +37,12 @@ class RedsysController extends AbstractController
         $this->redsysAPI = new RedsysAPI();
     }
 
+    #[Route('/get_medusa/{id}', name: 'get_medusa')]
+    public function getMedusaIdObject(string $id)
+    {
+
+    }
+
     #[Route('/autorizacion/{token}/{order}/{amount}/{idOrderMedusa}', name: 'app_redsys_send')]
     public function sendAutorization(string $token, string $order, string $amount, string $idOrderMedusa): Response
     {
