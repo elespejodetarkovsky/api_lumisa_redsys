@@ -1,0 +1,171 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\Transaction;
+use App\Model\RedsysAPI;
+use App\Repository\DsResponseRepository;
+use App\Repository\ResponseErrorRepository;
+use App\Repository\TransactionRepository;
+use App\Repository\TransactionTypeRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+
+//TODO IMPORTANTE: COLOCAR SEGURIDAD AQUI!!!!
+#[Route('/api')]
+class RedsysController extends AbstractController
+{
+    private const URL_PRUEBA        = "https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST";
+    private const CLAVE_COMERCIO    = "sq7HjrUOBfKmC576ILgskD5srU870gJ7";
+
+    private RedsysAPI $redsysAPI;
+
+    public function __construct(private HttpClientInterface $client,
+                                private EntityManagerInterface $entityManager,
+                                private ResponseErrorRepository $errorRepository,
+                                private DsResponseRepository $dsResponseRepository,
+                                private string $token = '',
+                                private string $idOrderMedusa = '')
+    {
+        $this->redsysAPI = new RedsysAPI();
+    }
+
+    #[Route('/autorizacion/{token}/{order}/{amount}/{idOrderMedusa}', name: 'app_redsys_send')]
+    public function sendAutorization(string $token, string $order, string $amount, string $idOrderMedusa): Response
+    {
+
+        $this->token                = $token;
+        $this->idOrderMedusa        = $idOrderMedusa;
+
+
+        // Valores de entrada que no hemos cmbiado para ningun ejemplo
+        $fuc            = "999008881"; //TODO en la configuracion
+        $terminal       = "1"; //TODO en la configuracion
+        $moneda         = "978"; //TODO
+        $trans          = RedsysAPI::AUTHORIZATION;
+        $amount         = "7895";
+
+        // Se Rellenan los campos
+        $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
+        $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
+        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE",$fuc);
+        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY",$moneda);
+        $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
+        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$terminal);
+        $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $token);
+        $this->redsysAPI->setParameter("DS_MERCHANT_DIRECTPAYMENT", "true");
+
+        $dsSignatureVersion     = 'HMAC_SHA256_V1';
+
+        //diversificación de clave 3DES
+        //OPENSSL_RAW_DATA=1
+
+        $params = $this->redsysAPI->createMerchantParameters();
+        $signature = $this->redsysAPI->createMerchantSignature(self::CLAVE_COMERCIO);
+
+        $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
+        $petition["Ds_MerchantParameters"]      = $params;
+        $petition["Ds_Signature"]               = $signature;
+
+        return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
+    }
+
+    private function fetchRedSys($body): Transaction|string
+    {
+
+        $response = $this->client->request(
+            'POST',
+            self::URL_PRUEBA,
+            [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Content-length' => strlen($body)
+                ],
+                'body' => $body
+            ]
+        );
+
+
+        if ($response->getStatusCode() == 200)
+        {
+
+            return $this->response($response->getContent());
+
+        } else {
+
+            return '{"error":'. $response->getInfo() .'}';
+
+        }
+
+    }
+
+
+    /**
+     * esta funcion se ejecutará en caso de que la llamada sea exitosa
+     * y devolverá error (si la tarjeta tuvo algún problema)
+     * o los datos correspondientes al response exitoso de la transacción
+     *
+     * @param string $responseJson
+     * @return string
+     */
+    private function response(string $responseJson): Transaction|string
+    {
+        $arrayResponde = json_decode($responseJson, true);
+
+        if (array_key_exists('errorCode', $arrayResponde))
+        {
+
+            return $this->errorRepository->findOneBy(['sisoxxx' => $arrayResponde['errorCode']]);
+
+        } else {
+
+            $version = $arrayResponde["Ds_SignatureVersion"];
+            $params = $arrayResponde["Ds_MerchantParameters"];
+            $signatureRecibida = $arrayResponde["Ds_Signature"];
+
+            $decode             = $this->redsysAPI->decodeMerchantParameters($params);
+            $codigoRespuesta    = $this->redsysAPI->getParameter('Ds_Response');
+            $cardNumber         = $this->redsysAPI->getParameter('Ds_CardNumber');
+            $amount             = $this->redsysAPI->getParameter('Ds_Amount');
+            $currency           = $this->redsysAPI->getParameter('Ds_Currency');
+
+            //instancio la clase...
+            $transaction = new Transaction();
+            $transaction->setIdOrder($this->redsysAPI->getParameter('Ds_Order'))
+                ->setCantidad($amount)
+                ->setEstado($codigoRespuesta)
+                ->setCountry($this->redsysAPI->getParameter('Ds_Card_Country'))
+                ->setToken($this->token)
+                ->setCardNumber($cardNumber)
+                ->setIdMedusa($this->idOrderMedusa)
+                ->setTransactionType(RedsysAPI::AUTHORIZATION)
+                ->setAuthorized(str_contains( $codigoRespuesta, '00'));
+
+
+            //la respuesta puede contener error por tanto se evalua antes de cargar el string
+            $transaction->setRespuesta( $this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]));
+
+            $signatureCalculada = $this->redsysAPI->createMerchantSignatureNotif(self::CLAVE_COMERCIO, $params);
+
+            if ($signatureCalculada === $signatureRecibida) {
+
+                //si estoy aquí ya puedo guardar en la base de datos
+                $this->entityManager->persist($transaction);
+                $this->entityManager->flush();
+
+                return $transaction;
+
+            } else {
+                return "{'error':'firma no valida'}";
+            }
+
+        }
+    }
+}

@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello HomeController!{% endblock %}
+
+{% block body %}
+    <div class="cardinfo-card-number">
+        <label class="cardinfo-label" for="card-number">Numero de tarjeta</label>
+        <div class='input-wrapper' id="card-number"></div>
+    </div>
+    <div class="cardinfo-exp-date">
+        <label class="cardinfo-label" for="card-expiration">Caducidad</label>
+        <div class='input-wrapper' id="card-expiration"></div>
+    </div>
+    <div class="cardinfo-cvv">
+        <label class="cardinfo-label" for="cvv">CVV</label>
+        <div class='input-wrapper' id="cvv"></div>
+    </div>
+
+    <input type="hidden" id="token"></input>
+    <input type="hidden" id="errorCode"></input>
+
+    <div id="boton"></div>
+
+
+    <a href="javascript:alert('token: ' + token + ' error: ' + document.getElementById('errorCode').value)"> ver</a>
+    <a id="enlace" href="">controller click segundo</a>
+{% endblock %}
