@@ -63,4 +63,13 @@ class TransactionRepository extends ServiceEntityRepository
             ->getOneOrNullResult()
         ;
     }
+    public function findOneByIdToken(string $token): ?Transaction
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.token = :token')
+            ->setParameter('token', $token)
+            ->getQuery()
+            ->getOneOrNullResult()
+            ;
+    }
 }

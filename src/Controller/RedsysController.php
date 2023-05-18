@@ -18,7 +18,9 @@ use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-//TODO IMPORTANTE: COLOCAR SEGURIDAD AQUI!!!!
+/**
+ * Access control en firewall config
+ */
 #[Route('/api')]
 class RedsysController extends AbstractController
 {
@@ -39,6 +41,14 @@ class RedsysController extends AbstractController
     }
 
 
+    #[Route('/', name: 'index_api')]
+    public function index(string $id): Response
+    {
+
+        return $this->render('api/index.html.twig');
+
+    }
+
     #[Route('/get_peticion_by_id_medusa/{id}', name: 'get_id_medusa')]
     public function getMedusaIdObject(string $id): Response
     {
@@ -50,50 +60,62 @@ class RedsysController extends AbstractController
 
     }
 
-
-    #[Route('/iniciarPeticion/{token}/{order}/{amount}/{idOrderMedusa}', name: 'app_redsys_init')]
-    public function initPeticion(string $token, string $order, string $amount, string $idOrderMedusa): Response
+    #[Route('/get_peticion_by_token/{token}', name: 'get_id_medusa')]
+    public function getTransactionByToken(string $token): Response
     {
 
-        $this->token                = $token;
-        $this->idOrderMedusa        = $idOrderMedusa;
+        //realizo la busqueda del objeto
+        $transaction = $this->entityManager->getRepository(Transaction::class)->findOneByIdToken($token);
 
-
-        // Valores de entrada que no hemos cmbiado para ningun ejemplo
-        $fuc            = "999008881"; //TODO en la configuracion
-        $terminal       = "1"; //TODO en la configuracion
-        $moneda         = "978"; //TODO
-        $trans          = RedsysAPI::AUTHORIZATION;
-        $amount         = "20095";
-
-        // Se Rellenan los campos
-        $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
-        $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
-        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE",$fuc);
-        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY",$moneda);
-        $this->redsysAPI->setParameter("DS_MERCHANT_EMV3DS",'{"threeDSInfo": "CardData"}');
-        $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
-        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$terminal);
-        $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $token);
-
-        $dsSignatureVersion     = 'HMAC_SHA256_V1';
-
-        //diversificación de clave 3DES
-        //OPENSSL_RAW_DATA=1
-
-        $params = $this->redsysAPI->createMerchantParameters();
-        $signature = $this->redsysAPI->createMerchantSignature(self::CLAVE_COMERCIO);
-
-        $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
-        $petition["Ds_MerchantParameters"]      = $params;
-        $petition["Ds_Signature"]               = $signature;
-
-        return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
+        return $this->json($transaction, Response::HTTP_OK);
 
     }
 
+
+    //TODO se usará en caso de iniciar la petición con autenticacion
+//    #[Route('/iniciarPeticion/{token}/{order}/{amount}/{idOrderMedusa}', name: 'app_redsys_init')]
+//    public function initPeticion(string $token, string $order, string $amount, string $idOrderMedusa): Response
+//    {
+//
+//        $this->token                = $token;
+//        $this->idOrderMedusa        = $idOrderMedusa;
+//
+//
+//        // Valores de entrada que no hemos cmbiado para ningun ejemplo
+//        $fuc            = "999008881"; //TODO en la configuracion
+//        $terminal       = "1"; //TODO en la configuracion
+//        $moneda         = "978"; //TODO
+//        $trans          = RedsysAPI::AUTHORIZATION;
+//        $amount         = "20095";
+//
+//        // Se Rellenan los campos
+//        $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE",$fuc);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY",$moneda);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_EMV3DS",'{"threeDSInfo": "CardData"}');
+//        $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$terminal);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $token);
+//
+//        $dsSignatureVersion     = 'HMAC_SHA256_V1';
+//
+//        //diversificación de clave 3DES
+//        //OPENSSL_RAW_DATA=1
+//
+//        $params = $this->redsysAPI->createMerchantParameters();
+//        $signature = $this->redsysAPI->createMerchantSignature(self::CLAVE_COMERCIO);
+//
+//        $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
+//        $petition["Ds_MerchantParameters"]      = $params;
+//        $petition["Ds_Signature"]               = $signature;
+//
+//        return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
+//
+//    }
+
     #[Route('/autorizacion/{token}/{order}/{amount}/{idOrderMedusa}', name: 'app_redsys_send')]
-    public function sendAutorization(Request $request, string $token, string $order, string $amount, string $idOrderMedusa): Response
+    public function sendAutorization(string $token, string $order, string $amount, string $idOrderMedusa): Response
     {
 
         $this->token                = $token;
@@ -102,7 +124,6 @@ class RedsysController extends AbstractController
 
         // Valores de entrada que no hemos cmbiado para ningun ejemplo
         $trans          = RedsysAPI::AUTHORIZATION;
-        $amount         = "20095";
 
         // Se Rellenan los campos
         $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
@@ -148,7 +169,7 @@ class RedsysController extends AbstractController
         if ($response->getStatusCode() == 200)
         {
 
-            return $this->response($response->getContent());
+            return $this->responseTransaction($response->getContent());
 
         } else {
 
@@ -167,7 +188,7 @@ class RedsysController extends AbstractController
      * @param string $responseJson
      * @return string
      */
-    private function response(string $responseJson): Transaction|string
+    private function responseTransaction(string $responseJson): Transaction|string
     {
         $arrayResponde = json_decode($responseJson, true);
 
