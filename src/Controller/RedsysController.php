@@ -128,7 +128,7 @@ class RedsysController extends AbstractController
         // Se Rellenan los campos
         $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
         $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
-        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE",$_ENV['TERMINAL']);
+        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE",$_ENV['FUC']);
         $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY", $_ENV['CURRENCY']);
         $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
         $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$_ENV['TERMINAL']);
