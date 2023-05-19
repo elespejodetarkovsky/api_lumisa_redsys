@@ -9,9 +9,9 @@
         {#{{ encore_entry_link_tags('app') }}#}
     {% endblock %}
 
-    {% block javascripts %}
-        {#            <script src="https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js"></script>#}
-        {#{{ encore_entry_script_tags('app') }}#}
+
+    {% block head %}
+
     {% endblock %}
     <script src="https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js"></script>
 </head>
@@ -20,6 +20,11 @@
 
     {% endblock %}
 </body>
+
+{% block javascripts %}
+    {#            <script src="https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js"></script>#}
+    {#{{ encore_entry_script_tags('app') }}#}
+{% endblock %}
 <!-- Listener -->
 <script>
     let enlace  = document.getElementById('enlace');
