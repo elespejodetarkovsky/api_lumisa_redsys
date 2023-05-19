@@ -54,13 +54,22 @@ class TransactionRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-//    public function findOneBySomeField($value): ?Transaction
-//    {
-//        return $this->createQueryBuilder('t')
-//            ->andWhere('t.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    public function findOneByIdMedusa(string $id): ?Transaction
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.idMedusa = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+    }
+    public function findOneByIdToken(string $token): ?Transaction
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.token = :token')
+            ->setParameter('token', $token)
+            ->getQuery()
+            ->getOneOrNullResult()
+            ;
+    }
 }
