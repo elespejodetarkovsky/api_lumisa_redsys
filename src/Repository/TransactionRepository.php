@@ -72,4 +72,14 @@ class TransactionRepository extends ServiceEntityRepository
             ->getOneOrNullResult()
             ;
     }
+
+    public function findTransactionsByEstado(string $estado): ?array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.estado = :estado')
+            ->setParameter('estado', $estado)
+            ->getQuery()
+            ->getOneOrNullResult()
+            ;
+    }
 }
