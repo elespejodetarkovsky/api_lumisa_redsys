@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello HomeController!{% endblock %}
+
+{% block head %}
+    <script src="https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js">
+{% endblock %}
+
+{% block body %}
+    <div class="cardinfo-card-number">
+        <label class="cardinfo-label" for="card-number">Numero de tarjeta</label>
+        <div class='input-wrapper' id="card-number"></div>
+    </div>
+    <div class="cardinfo-exp-date">
+        <label class="cardinfo-label" for="card-expiration">Caducidad</label>
+        <div class='input-wrapper' id="card-expiration"></div>
+    </div>
+    <div class="cardinfo-cvv">
+        <label class="cardinfo-label" for="cvv">CVV</label>
+        <div class='input-wrapper' id="cvv"></div>
+    </div>
+
+    <input type="hidden" id="token"></input>
+    <input type="hidden" id="errorCode"></input>
+
+    <div id="boton"></div>
+
+
+    <a href="javascript:alert('token: ' + token + ' error: ' + document.getElementById('errorCode').value)"> ver Token</a>
+    <a id="enlace" href="">controller click segundo</a>
+{% endblock %}
+
+{% block javascripts %}
+
+    <script>
+        let enlace  = document.getElementById('enlace');
+        let order;
+        let token;
+
+        function validaciones() {
+        //Insertar validaciones…
+        console.log('Aqui se pueden realizar validaciones previas a la generación del token');
+        return true;
+    }
+
+        window.addEventListener("message", function receiveMessage(event) {
+        //se almacena en el input el token generado, o error en caso de que ocurra
+        storeIdOper(event, "token", "errorCode", validaciones);
+        token = document.getElementById('token').value;
+        enlace.href = '/api/autorizacion/' + token + '/' + order + '/7895/iii';
+        console.log('order: ')
+        console.log( order );
+        console.log('token: ');
+        console.log( token );
+    });
+
+        function pedido() {
+
+        //genero un numero en base a date unix único
+        console.log('num_order: ');
+        order = Math.floor(Date.now() / 1000);
+
+        //como es tan estricto con el tema de los string hago la conversión
+        return order.toString();
+    }
+
+
+        /*
+            ('card-number', estiloCaja, placeholder, estiloInput);
+            ('card-expiration', estilosCSS, placeholder);
+            ('cvv', estilosCSS, placeholder);
+            ('boton', estilosCSS, 'Texto botón pago', fuc, terminal, merchantOrder);
+            fuc: código de comercio
+            terminal: terminal
+        */
+
+        getCardInput('card-number', '', '', '');
+        getExpirationInput('card-expiration', '', '');
+        getCVVInput('cvv', '', '');
+        getPayButton('boton', '', 'Texto botón pago', '999008881', '1', pedido());
+    </script>
+
+{% endblock %}

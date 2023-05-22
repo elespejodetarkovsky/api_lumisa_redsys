@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello HomeController!{% endblock %}
+{% block title %}Login Api Lumisa RedSys{% endblock %}
 
 {% block stylesheets %}
     <style>
@@ -92,15 +92,14 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Login</title>
-        <link rel="stylesheet" href="login-page.css">
-        <script defer src="login-page.js"></script>
+        <title>Login API RedSys Lumisa</title>
     </head>
 {% endblock %}
 
 {% block body %}
+
     <main id="main-holder">
-        <h1 id="login-header">Login</h1>
+        <h1 id="login-header">Login API RedSys Lumisa</h1>
 
         <div id="login-error-msg-holder">
             <p id="login-error-msg">Invalid username <span id="error-msg-second-line">and/or password</span></p>
@@ -113,27 +112,7 @@
         </form>
 
     </main>
-{#    <div class="cardinfo-card-number">#}
-{#        <label class="cardinfo-label" for="card-number">Numero de tarjeta</label>#}
-{#        <div class='input-wrapper' id="card-number"></div>#}
-{#    </div>#}
-{#    <div class="cardinfo-exp-date">#}
-{#        <label class="cardinfo-label" for="card-expiration">Caducidad</label>#}
-{#        <div class='input-wrapper' id="card-expiration"></div>#}
-{#    </div>#}
-{#    <div class="cardinfo-cvv">#}
-{#        <label class="cardinfo-label" for="cvv">CVV</label>#}
-{#        <div class='input-wrapper' id="cvv"></div>#}
-{#    </div>#}
 
-{#    <input type="hidden" id="token"></input>#}
-{#    <input type="hidden" id="errorCode"></input>#}
-
-{#    <div id="boton"></div>#}
-
-
-{#    <a href="javascript:alert('token: ' + token + ' error: ' + document.getElementById('errorCode').value)"> ver</a>#}
-{#    <a id="enlace" href="">controller click segundo</a>#}
 {% endblock %}
 
 {% block javascripts %}
@@ -147,12 +126,22 @@
             const username = loginForm.username.value;
             const password = loginForm.password.value;
 
-            if (username === "user" && password === "web_dev") {
-            alert("You have successfully logged in.");
-            location.reload();
-        } else {
-            loginErrorMsg.style.opacity = 1;
-        }
+            axios.post('/login', {
+                email: username,
+                password: password
+            })
+                .then(function (response) {
+                    if (response.data.user)
+                    {
+                        location.href ='/api';
+                    }
+                })
+                .catch(function (error) {
+                    console.log(error);
+                    console.log(loginErrorMsg)
+                    loginErrorMsg.style.opacity = '100';
+                });
+
         })
     </script>
 {% endblock %}

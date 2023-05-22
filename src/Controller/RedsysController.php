@@ -6,17 +6,14 @@ use App\Entity\Transaction;
 use App\Model\RedsysAPI;
 use App\Repository\DsResponseRepository;
 use App\Repository\ResponseErrorRepository;
-use App\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use function Symfony\Component\String\u;
 
 /**
  * Access control en firewall config
@@ -34,6 +31,7 @@ class RedsysController extends AbstractController
                                 private EntityManagerInterface $entityManager,
                                 private ResponseErrorRepository $errorRepository,
                                 private DsResponseRepository $dsResponseRepository,
+                                private RouterInterface $router,
                                 private string $token = '',
                                 private string $idOrderMedusa = '')
     {
@@ -42,14 +40,39 @@ class RedsysController extends AbstractController
 
 
     #[Route('/', name: 'index_api')]
-    public function index(string $id): Response
+    public function index(): Response
     {
 
-        return $this->render('api/index.html.twig');
+        $allRoutes          = $this->router->getRouteCollection()->all();
+
+        $routesApi          = array();
+
+
+        foreach ($allRoutes as $name => $route) {
+
+            if(u($route->getPath())->containsAny('api'))
+            {
+                $routesApi[] = $route->getPath();
+            }
+
+        }
+
+        return $this->render('api/index.html.twig',
+        [
+            'routes' => $routesApi
+        ]);
 
     }
 
-    #[Route('/get_peticion_by_id_medusa/{id}', name: 'get_id_medusa')]
+    #[Route('/test', name: 'test_api')]
+    public function test(): Response
+    {
+
+        return $this->render('api/test.html.twig');
+
+    }
+
+    #[Route('/get_peticion_by_id_medusa/{id}', name: 'get_id_medusa_api')]
     public function getMedusaIdObject(string $id): Response
     {
 
@@ -60,7 +83,7 @@ class RedsysController extends AbstractController
 
     }
 
-    #[Route('/get_peticion_by_token/{token}', name: 'get_id_medusa')]
+    #[Route('/get_peticion_by_token/{token}', name: 'get_by_token_api')]
     public function getTransactionByToken(string $token): Response
     {
 
@@ -114,7 +137,7 @@ class RedsysController extends AbstractController
 //
 //    }
 
-    #[Route('/autorizacion/{token}/{order}/{amount}/{idOrderMedusa}', name: 'app_redsys_send')]
+    #[Route('/autorizacion/{token}/{order}/{amount}/{idOrderMedusa}', name: 'app_redsys_send_api')]
     public function sendAutorization(string $token, string $order, string $amount, string $idOrderMedusa): Response
     {
 
@@ -258,7 +281,6 @@ class RedsysController extends AbstractController
                 return $codigoRespuesta;
 
             }
-
 
         }
     }
