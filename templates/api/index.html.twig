@@ -5,7 +5,14 @@
 {% block body %}
     <div class="container">
 
-        <h1>API PROVIDER REDSYS LUMISOLAR/LUMISA INSITE</h1>
+        <h3>API PROVIDER REDSYS LUMISOLAR/LUMISA INSITE</h3>
+
+        <a href="{{ path('test_api') }}">test de tarjeta</a>
+        <ul>
+            {% for route in routes %}
+                <li>{{ route }}</li>
+            {% endfor %}
+        </ul>
 
     </div>
     <!-- /.container -->
