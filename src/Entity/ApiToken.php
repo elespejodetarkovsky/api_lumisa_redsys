@@ -9,17 +9,19 @@ use Doctrine\ORM\Mapping as ORM;
 class ApiToken
 {
 
-    private const PERSONAL_ACCESS_TOKEN_PREFIX = 'tcp_';
+    private const PERSONAL_ACCESS_TOKEN_PREFIX = 'rs_lumisa_';
 
 
     public const SCOPE_USER_EDIT = 'ROLE_USER_EDIT';
-    public const SCOPE_TREASURE_CREATE = 'ROLE_TREASURE_CREATE';
-    public const SCOPE_TREASURE_EDIT = 'ROLE_TREASURE_EDIT';
+    public const SCOPE_API_CREATE = 'ROLE_API_CREATE';
+    public const SCOPE_API_EDIT = 'ROLE_API_EDIT';
+    public const SCOPE_API_TEST = 'ROLE_API_TEST';
 
     public const SCOPES = [
         self::SCOPE_USER_EDIT => 'Edit User',
-        self::SCOPE_TREASURE_CREATE => 'Create Treasures',
-        self::SCOPE_TREASURE_EDIT => 'Edit Treasures',
+        self::SCOPE_API_CREATE => 'TODO',
+        self::SCOPE_API_EDIT => 'TODO',
+        self::SCOPE_API_TEST => 'por ahora se usa para test'
     ];
 
 
