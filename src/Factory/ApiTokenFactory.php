@@ -47,7 +47,7 @@ final class ApiTokenFactory extends ModelFactory
     protected function getDefaults(): array
     {
         return [
-            'ownedBy' => null, // TODO add App\Entity\User type manually
+            'ownedBy' => UserFactory::random(), // TODO add App\Entity\User type manually
             'scopes' => [
                     ApiToken::SCOPE_GET,
                     ApiToken::SCOPE_POST
