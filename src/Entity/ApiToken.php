@@ -12,16 +12,16 @@ class ApiToken
     private const PERSONAL_ACCESS_TOKEN_PREFIX = 'rs_lumisa_';
 
 
-    public const SCOPE_USER_EDIT = 'ROLE_USER_EDIT';
-    public const SCOPE_API_CREATE = 'ROLE_API_CREATE';
-    public const SCOPE_API_EDIT = 'ROLE_API_EDIT';
-    public const SCOPE_API_TEST = 'ROLE_API_TEST';
+    public const SCOPE_GET = 'ROLE_USER_API_GET';
+    public const SCOPE_POST = 'ROLE_USER_API_POST';
+    public const SCOPE_ALL = 'ROLE_API_ALL';
+    public const SCOPE_ADMIN = 'ROLE_ADMIN';
 
     public const SCOPES = [
-        self::SCOPE_USER_EDIT => 'Edit User',
-        self::SCOPE_API_CREATE => 'TODO',
-        self::SCOPE_API_EDIT => 'TODO',
-        self::SCOPE_API_TEST => 'por ahora se usa para test'
+        self::SCOPE_GET => 'User con permisos para realizar get',
+        self::SCOPE_POST => 'User con permisos para realizar post',
+        self::SCOPE_ALL => 'User con permisos para realizar get/post',
+        self::SCOPE_ADMIN => 'acceso total'
     ];
 
 

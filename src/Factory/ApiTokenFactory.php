@@ -49,8 +49,8 @@ final class ApiTokenFactory extends ModelFactory
         return [
             'ownedBy' => null, // TODO add App\Entity\User type manually
             'scopes' => [
-                    ApiToken::SCOPE_TREASURE_CREATE,
-                    ApiToken::SCOPE_TREASURE_EDIT
+                    ApiToken::SCOPE_GET,
+                    ApiToken::SCOPE_POST
                 ],
         ];
     }
