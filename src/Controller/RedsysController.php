@@ -22,9 +22,6 @@ use function Symfony\Component\String\u;
 #[Route('/api')]
 class RedsysController extends AbstractController
 {
-    private const URL_TEST_TRATA             = "https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST";
-    private const URL_TEST_INIT        = "https://sis-t.redsys.es:25443/sis/rest/iniciaPeticionREST";
-    private const CLAVE_COMERCIO         = "sq7HjrUOBfKmC576ILgskD5srU870gJ7";
 
     private RedsysAPI $redsysAPI;
 
@@ -34,7 +31,7 @@ class RedsysController extends AbstractController
                                 private DsResponseRepository $dsResponseRepository,
                                 private RouterInterface $router,
                                 private string $token = '',
-                                private string $idOrderMedusa = '')
+                                private string $idCarrito = '')
     {
         $this->redsysAPI = new RedsysAPI();
     }
@@ -138,24 +135,24 @@ class RedsysController extends AbstractController
 //
 //    }
 
-    #[Route('/autorizacion/{token}/{order}/{amount}/{idOrderMedusa}', name: 'app_redsys_send_api')]
-    public function sendAutorization(string $token, string $order, string $amount, string $idOrderMedusa): Response
+    #[Route('/autorizacion/{token}/{order}/{amount}/{idCarrito}', name: 'app_redsys_send_api')]
+    public function sendAutorization(string $token, string $order, string $amount, string $idCarrito): Response
     {
 
         $this->token                = $token;
-        $this->idOrderMedusa        = $idOrderMedusa;
+        $this->idCarrito            = $idCarrito;
 
 
         // Valores de entrada que no hemos cmbiado para ningun ejemplo
-        $trans          = RedsysAPI::AUTHORIZATION;
+        $trans                      = RedsysAPI::AUTHORIZATION;
 
         // Se Rellenan los campos
         $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
         $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
-        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE",$_ENV['FUC']);
-        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY", $_ENV['CURRENCY']);
+        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE", $this->getParameter('app.fuc'));
+        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY", $this->getParameter('app.currency'));
         $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
-        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$_ENV['TERMINAL']);
+        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$this->getParameter('app.terminal'));
         $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $token);
         $this->redsysAPI->setParameter("DS_MERCHANT_DIRECTPAYMENT", "true");
 
@@ -165,7 +162,7 @@ class RedsysController extends AbstractController
         //OPENSSL_RAW_DATA=1
 
         $params = $this->redsysAPI->createMerchantParameters();
-        $signature = $this->redsysAPI->createMerchantSignature(self::CLAVE_COMERCIO);
+        $signature = $this->redsysAPI->createMerchantSignature($this->getParameter('app.clave.comercio'));
 
         $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
         $petition["Ds_MerchantParameters"]      = $params;
@@ -179,7 +176,7 @@ class RedsysController extends AbstractController
 
         $response = $this->client->request(
             'POST',
-            self::URL_TEST_TRATA,
+            $this->getParameter('app.url.redsys'),
             [
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -248,7 +245,7 @@ class RedsysController extends AbstractController
                     ->setCountry($this->redsysAPI->getParameter('Ds_Card_Country'))
                     ->setToken($this->token)
                     ->setCardNumber($cardNumber)
-                    ->setIdMedusa($this->idOrderMedusa)
+                    ->setIdMedusa($this->idCarrito)
                     ->setTransactionType(RedsysAPI::AUTHORIZATION)
                     ->setAuthorized(str_contains( $codigoRespuesta, '00'));
 
@@ -256,7 +253,7 @@ class RedsysController extends AbstractController
                 //la respuesta puede contener error por tanto se evalua antes de cargar el string
                 $transaction->setRespuesta( $this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]));
 
-                $signatureCalculada = $this->redsysAPI->createMerchantSignatureNotif(self::CLAVE_COMERCIO, $params);
+                $signatureCalculada = $this->redsysAPI->createMerchantSignatureNotif($this->getParameter('app.clave.comercio'), $params);
 
                 if ($signatureCalculada === $signatureRecibida) {
 
