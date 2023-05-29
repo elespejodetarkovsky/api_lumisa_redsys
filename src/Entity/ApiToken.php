@@ -4,8 +4,10 @@ namespace App\Entity;
 
 use App\Repository\ApiTokenRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\PrePersist;
 
 #[ORM\Entity(repositoryClass: ApiTokenRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class ApiToken
 {
 
@@ -97,6 +99,15 @@ class ApiToken
         return $this->scopes;
     }
 
+    #[prePersist]
+    public function addTimeToToken()
+    {
+
+        //le sumaré al token el valor que se encuentre en la TODO configuración
+        $now        = new \DateTimeImmutable();
+        $this->setExpiresAt($now->modify('+ 2 minute'));
+
+    }
     public function setScopes(array $scopes): self
     {
         $this->scopes = $scopes;
