@@ -157,7 +157,7 @@ class RedsysController extends AbstractController
         $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
         $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$_ENV['TERMINAL']);
         $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $token);
-        $this->redsysAPI->setParameter("DS_MERCHANT_DIRECTPAYMENT", "true");
+        //$this->redsysAPI->setParameter("DS_MERCHANT_DIRECTPAYMENT", "true");
 
         $dsSignatureVersion     = 'HMAC_SHA256_V1';
 
