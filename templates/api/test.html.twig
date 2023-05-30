@@ -4,6 +4,7 @@
 
 {% block head %}
     <script src="https://sis-t.redsys.es:25443/sis/NC/sandbox/redsysV3.js">
+{#    <script src="https://sis.redsys.es/sis/NC/redsysV3.js"></script>#}
 {% endblock %}
 
 {% block body %}
@@ -27,13 +28,15 @@
 
 
     <a href="javascript:alert('token: ' + token + ' error: ' + document.getElementById('errorCode').value)"> ver Token</a>
-    <a id="enlace" href="">controller click segundo</a>
+    <a id="enlace" href="">tratar peticion</a><br>
+    <a id="iniciar" href="">iniciar peticion</a>
 {% endblock %}
 
 {% block javascripts %}
 
     <script>
         let enlace  = document.getElementById('enlace');
+        let iniciar  = document.getElementById('iniciar');
         let order;
         let token;
 
@@ -48,6 +51,7 @@
         storeIdOper(event, "token", "errorCode", validaciones);
         token = document.getElementById('token').value;
         enlace.href = '/api/autorizacion/' + token + '/' + order + '/7895/iii';
+        iniciar.href = '/api/iniciarPeticion/' + token + '/' + order + '/7895/iii';
         console.log('order: ')
         console.log( order );
         console.log('token: ');
