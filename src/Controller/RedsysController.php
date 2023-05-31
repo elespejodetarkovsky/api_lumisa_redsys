@@ -2,11 +2,13 @@
 
 namespace App\Controller;
 
+use App\Entity\Challenge;
 use App\Entity\Emv3DS;
 use App\Entity\Transaction;
 use App\Model\RedsysAPI;
 use App\Repository\DsResponseRepository;
 use App\Repository\ResponseErrorRepository;
+use App\Utils\RESTConstants;
 use Doctrine\ORM\EntityManagerInterface;
 use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -134,43 +136,72 @@ class RedsysController extends AbstractController
 
     }
 
-    #[Route('/autorizacion/{token}/{order}/{amount}/{idCarrito}', name: 'app_redsys_send_api')]
-    public function sendAutorization(string $token, string $order, string $amount, string $idCarrito): Response
+
+    #[Route('/autorizacion/{token}/{order}/{amount}/{idCarrito}/{dsServerTransId}/{dsMethodUrl}', name: 'app_redsys_send_api')]
+    public function sendAutorization(string $token, string $order,
+                                     string $amount, string $idCarrito,
+                                     string $dsServerTransId, ?string $dsMethodUrl = null): Response
     {
 
-        $this->token                = $token;
-        $this->idCarrito            = $idCarrito;
+        //TODO evaluar pago inseguro
 
+        /*+* si recibo null en la url paso threeSDCompInd = N ***/
+        /*** dependiendo de si se recibe response o no se continua ***/
 
-        // Valores de entrada que no hemos cmbiado para ningun ejemplo
-        $trans                      = RedsysAPI::AUTHORIZATION;
+        $petition = '';
 
-        // Se Rellenan los campos
-        $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
-        $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
-        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE", $this->getParameter('app.fuc'));
-        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY", $this->getParameter('app.currency'));
-        $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
-        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$this->getParameter('app.terminal'));
-        $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $token);
-        //$this->redsysAPI->setParameter("DS_MERCHANT_DIRECTPAYMENT", "true");
+        if( $dsMethodUrl == null )
+        {
 
-        $dsSignatureVersion     = 'HMAC_SHA256_V1';
+            $petition = $this->autorizationRest($order,
+                '0',
+                $amount,
+                $token,
+                array(RESTConstants::$REQUEST_MERCHANT_EMV3DS_THREEDSINFO => RESTConstants::$REQUEST_MERCHANT_EMV3DS_AUTHENTICACIONDATA,
+                    RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION => RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION_102,
+                    RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER_VALUE,
+                    RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT_VALUE,
+                    "threeDSServerTransID" => $dsServerTransId,
+                    "threeDSCompInd" => "N")
+            );
 
-        //diversificación de clave 3DES
-        //OPENSSL_RAW_DATA=1
-
-        $params = $this->redsysAPI->createMerchantParameters();
-        $signature = $this->redsysAPI->createMerchantSignature($this->getParameter('app.clave.comercio'));
-
-        $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
-        $petition["Ds_MerchantParameters"]      = $params;
-        $petition["Ds_Signature"]               = $signature;
+        }
 
         return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
+
+//        $this->token                = $token;
+//        $this->idCarrito            = $idCarrito;
+//
+//
+//        // Valores de entrada que no hemos cmbiado para ningun ejemplo
+//        $trans                      = RedsysAPI::AUTHORIZATION;
+//
+//        // Se Rellenan los campos
+//        $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE", $this->getParameter('app.fuc'));
+//        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY", $this->getParameter('app.currency'));
+//        $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
+//        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$this->getParameter('app.terminal'));
+//        $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $token);
+//        //$this->redsysAPI->setParameter("DS_MERCHANT_DIRECTPAYMENT", "true");
+//
+//        $dsSignatureVersion     = 'HMAC_SHA256_V1';
+//
+//        //diversificación de clave 3DES
+//        //OPENSSL_RAW_DATA=1
+//
+//        $params = $this->redsysAPI->createMerchantParameters();
+//        $signature = $this->redsysAPI->createMerchantSignature($this->getParameter('app.clave.comercio'));
+//
+//        $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
+//        $petition["Ds_MerchantParameters"]      = $params;
+//        $petition["Ds_Signature"]               = $signature;
+//
+     //   return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
     }
 
-    private function fetchRedSys($body, bool $init = false): Transaction|Emv3DS|string
+    private function fetchRedSys($body, bool $init = false): Transaction|Emv3DS|Challenge|string
     {
 
         $response = $this->client->request(
@@ -193,7 +224,7 @@ class RedsysController extends AbstractController
 
         } else {
 
-            return '{"error":'. $response->getInfo() .'}';
+            return '{"error":'. $response->getContent() .'}';
 
         }
 
@@ -240,25 +271,7 @@ class RedsysController extends AbstractController
                 ->setThreeDSMethodURL($threeDSMethodURL)
                 ->setCardPSD2($cardPSD2);
 
-
-            //si url es null la operación se puede dar por cerrada y se puede hacer la llamada directamente
-            if( $threeDSMethodURL == null )
-            {
-
-                $this->autorizationRest($this->order,
-                    '0',
-                    $this->amount,
-                    $this->token,
-                    '{"threeDSServerTransID":"'.$emv3ds['threeDSServerTransID'].'","threeDSCompInd":"N"}'
-                    //'{"threeDSCompInd":"N"}'
-                );
-
-            } else {
-
-
-                return $objEmv3ds;
-
-            }
+            return $objEmv3ds;
 
 
         }
@@ -275,7 +288,7 @@ class RedsysController extends AbstractController
      * @return void
      */
     private function autorizationRest(string $order, string $transactionType,
-                                      string $amount, string $idOper, string $emv3ds)
+                                      string $amount, string $idOper, array $emv3ds): array
     {
 
         //limpio los parametros
@@ -288,7 +301,7 @@ class RedsysController extends AbstractController
         $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE", $transactionType);
         $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
         $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $idOper);
-        $this->redsysAPI->setParameter("DS_MERCHANT_EMV3DS", $emv3ds);
+        $this->redsysAPI->setParameter("DS_MERCHANT_EMV3DS", json_encode($emv3ds));
 
 
         $dsSignatureVersion     = 'HMAC_SHA256_V1';
@@ -304,9 +317,10 @@ class RedsysController extends AbstractController
         $petition["Ds_Signature"]               = $signature;
 
         //dd($this->redsysAPI->decodeMerchantParameters($params));
-        dd(json_encode($petition));
-        return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
+        //dd(json_encode($petition));
+        //return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
 
+        return $petition;
 
     }
 
@@ -319,7 +333,7 @@ class RedsysController extends AbstractController
      * @param string $responseJson
      * @return string
      */
-    private function responseTransaction(string $responseJson): Transaction|string
+    private function responseTransaction(string $responseJson): Transaction|Challenge|string
     {
         $arrayResponde = json_decode($responseJson, true);
 
@@ -337,11 +351,29 @@ class RedsysController extends AbstractController
             //obtengo los datos de forma separada
             $decode             = $this->redsysAPI->decodeMerchantParameters($params);
 
-
             $codigoRespuesta    = $this->redsysAPI->getParameter('Ds_Response');
             $cardNumber         = $this->redsysAPI->getParameter('Ds_CardNumber');
             $amount             = $this->redsysAPI->getParameter('Ds_Amount');
             $currency           = $this->redsysAPI->getParameter('Ds_Currency');
+            $dsEmv3DS           = $this->redsysAPI->getParameter('Ds_EMV3DS');
+            $order              = $this->redsysAPI->getParameter('Ds_Order');
+
+            //si es null Ds_Response necesitará hacer un challenge
+            //y se buscará acsURL y creq para devolverlos por json
+            if( $codigoRespuesta == null )
+            {
+                //podría ser un challenge armo la entidad con la respuesta
+                $challenge = new Challenge();
+
+                $challenge->setAmount($amount)
+                    ->setCurrency($this->getParameter('app.currency'))
+                    ->setOrder($order)
+                    ->setMerchantCode($this->getParameter('app.fuc'))
+                    ->setTerminal($this->getParameter('app.terminal'))
+                    ->setOutDsEmv3DS($dsEmv3DS);
+
+                return $challenge;
+            }
 
             //será 0000 a 0099
             if ( str_starts_with( $codigoRespuesta, '00' ))
