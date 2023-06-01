@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AutorizationPayLoad;
 use App\Entity\Challenge;
 use App\Entity\Emv3DS;
 use App\Entity\Transaction;
@@ -14,6 +15,7 @@ use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Serializer\Annotation\Context;
@@ -136,69 +138,83 @@ class RedsysController extends AbstractController
 
     }
 
+    private function getProtocoloVersion (string $protocol): string
+    {
+        if( $protocol == '1.0' )
+        {
+            return RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION_102;
+        } elseif ( $protocol == '2.1')
+        {
+            return RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION_210;
+        } else {
+            return RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION_220;
+        }
 
-    #[Route('/autorizacion/{token}/{order}/{amount}/{idCarrito}/{dsServerTransId}/{dsMethodUrl}', name: 'app_redsys_send_api')]
-    public function sendAutorization(string $token, string $order,
-                                     string $amount, string $idCarrito,
-                                     string $dsServerTransId, ?string $dsMethodUrl = null): Response
+    }
+
+    #[Route('/autorizacion', name: 'app_redsys_send_api', methods: 'post')]
+    public function sendAutorization(#[MapRequestPayload] AutorizationPayLoad $autorizationPayLoad): Response
     {
 
         //TODO evaluar pago inseguro
-
+        /*** protocolVersion 2 corresponde a 2.1.0 o 2.2.0 ***/
         /*+* si recibo null en la url paso threeSDCompInd = N ***/
         /*** dependiendo de si se recibe response o no se continua ***/
 
+        dd($autorizationPayLoad);
+
         $petition = '';
 
-        if( $dsMethodUrl == null )
-        {
+        //Realizo el cuerpo de peticion en función de lo que solicite el front
 
-            $petition = $this->autorizationRest($order,
-                '0',
-                $amount,
-                $token,
-                array(RESTConstants::$REQUEST_MERCHANT_EMV3DS_THREEDSINFO => RESTConstants::$REQUEST_MERCHANT_EMV3DS_AUTHENTICACIONDATA,
-                    RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION => RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION_102,
-                    RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER_VALUE,
-                    RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT_VALUE,
-                    "threeDSServerTransID" => $dsServerTransId,
-                    "threeDSCompInd" => "N")
-            );
+            if( $autorizationPayLoad->getDsMethodUrl() == null )
+            {
 
-        }
+                $petition = $this->autorizationRest($autorizationPayLoad->getOrder(),
+                    '0',
+                    $autorizationPayLoad->getAmount(),
+                    $autorizationPayLoad->getToken(),
+                    array(RESTConstants::$REQUEST_MERCHANT_EMV3DS_THREEDSINFO => RESTConstants::$REQUEST_MERCHANT_EMV3DS_AUTHENTICACIONDATA,
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION => $this->getProtocoloVersion($autorizationPayLoad->getProtocolVersion() ?? RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION_210),
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER_VALUE,
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT_VALUE,
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_JAVA_ENABLE => 'false',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_LANGUAGE => 'ES-es',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_COLORDEPTH => '24',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_HEIGHT => '1250',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_WIDTH => '1320',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_TZ => '52',
+                        "threeDSServerTransID" => $autorizationPayLoad->getDsServerTransId(),
+                        "threeDSCompInd" => "N")
+                );
+
+            } else {
+
+                $petition = $this->autorizationRest($autorizationPayLoad->getOrder(),
+                    '0',
+                    $autorizationPayLoad->getAmount(),
+                    $autorizationPayLoad->getToken(),
+                    array(RESTConstants::$REQUEST_MERCHANT_EMV3DS_THREEDSINFO => RESTConstants::$REQUEST_MERCHANT_EMV3DS_AUTHENTICACIONDATA,
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION => $this->getProtocoloVersion($protocolVersion ?? RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION_210),
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER_VALUE,
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT_VALUE,
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_JAVA_ENABLE => 'false',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_LANGUAGE => 'ES-es',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_COLORDEPTH => '24',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_HEIGHT => '1250',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_WIDTH => '1320',
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_TZ => '52',
+                        "threeDSServerTransID" => $autorizationPayLoad->getDsServerTransId(),
+                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_NOTIFICATIONURL => $autorizationPayLoad->getDsMethodUrl(),
+                        "threeDSCompInd" => "Y")
+                );
+
+
+            }
+
 
         return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
 
-//        $this->token                = $token;
-//        $this->idCarrito            = $idCarrito;
-//
-//
-//        // Valores de entrada que no hemos cmbiado para ningun ejemplo
-//        $trans                      = RedsysAPI::AUTHORIZATION;
-//
-//        // Se Rellenan los campos
-//        $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
-//        $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
-//        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE", $this->getParameter('app.fuc'));
-//        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY", $this->getParameter('app.currency'));
-//        $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE",$trans);
-//        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$this->getParameter('app.terminal'));
-//        $this->redsysAPI->setParameter("DS_MERCHANT_IDOPER", $token);
-//        //$this->redsysAPI->setParameter("DS_MERCHANT_DIRECTPAYMENT", "true");
-//
-//        $dsSignatureVersion     = 'HMAC_SHA256_V1';
-//
-//        //diversificación de clave 3DES
-//        //OPENSSL_RAW_DATA=1
-//
-//        $params = $this->redsysAPI->createMerchantParameters();
-//        $signature = $this->redsysAPI->createMerchantSignature($this->getParameter('app.clave.comercio'));
-//
-//        $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
-//        $petition["Ds_MerchantParameters"]      = $params;
-//        $petition["Ds_Signature"]               = $signature;
-//
-     //   return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
     }
 
     private function fetchRedSys($body, bool $init = false): Transaction|Emv3DS|Challenge|string

@@ -5,9 +5,23 @@
 {% block body %}
     <div class="container">
 
-        <form action="{{ acsURL }}" method="POST" enctype="application/x-www-form-urlencoded">
-            <input type="hidden" name="creq" value="{{ creq }}">
-        </form>
+        {% if protocol == 2 %}
+
+            <
+            <form action="{{ acsURL }}" method="POST" enctype="application/x-www-form-urlencoded">
+                <input type="hidden" name="creq" value="{{ creq }}">
+            </form>
+
+        {% else %}
+
+            <form action="{{ acsURL }}" method="POST">
+                <input type="hidden" name="MD" value="{{ MD }}" />
+                <input type="hidden" name="PaReq" value="{{ creq }}" />
+                <input type="hidden" name="TermUrl" value="{{ termUrl }}" />
+            </form>
+
+        {% endif %}
+
 
     </div>
     <!-- /.container -->

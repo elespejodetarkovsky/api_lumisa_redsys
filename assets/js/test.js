@@ -7,6 +7,8 @@ let dsMethodUrl;
 let threeDSInfo;
 let protocolVersion;
 let autorizationGet = '';
+let autorizacionPayLoad;
+let iniciarGet;
 
 import axios from "axios";
 
@@ -18,7 +20,8 @@ function validaciones() {
 
 tratar.addEventListener('click', function()
 {
-    axios.get(autorizationGet)
+    axios.post('/api/autorizacion/',
+        autorizacionPayLoad)
         .then(function (response) {
             if (response.data)
             {
@@ -31,17 +34,27 @@ tratar.addEventListener('click', function()
 });
 
 iniciar.addEventListener('click', function() {
-    axios.get('/api/iniciarPeticion/' + token + '/' + order + '/7878' + '/' + 'carritoId' )
+
+    //let iniciarGet = '/api/iniciarPeticion/' + token + '/' + order + '/7878' + '/' + 'carritoId';
+
+    axios.get( iniciarGet )
         .then(function (response) {
 
-            threeDServerTransID = response.data.threeDServerTransID;
-            dsMethodUrl         = response.data.dsMethodUrl ?? null;
-            threeDSInfo         = response.data.threeDSInfo;
-            protocolVersion     = response.data.protocolVersion;
+            autorizacionPayLoad = {
+                token: token,
+                amount: '7878',
+                order: order,
+                idCarrito: 'carritoId',
+                dsServerTransId: response.data.threeDServerTransID,
+                protocolVersion: response.data.protocolVersion,
+                dsMethodUrl: 'test'//response.data.threeDSMethodURL
+            };
 
-            autorizationGet     = '/api/autorizacion/' + token + '/' + order + '/7878/carritoId/' + threeDServerTransID; // + '/' + dsMethodUrl;
+
+            autorizationGet     = '/api/autorizacion/' + token + '/' + order + '/7878/carritoId/' + threeDServerTransID  + '/' + protocolVersion + '/' + dsMethodUrl;
 
             console.log(autorizationGet)
+            console.log(autorizacionPayLoad);
 
         })
         .catch(function (error) {
@@ -55,11 +68,8 @@ window.addEventListener("message", function receiveMessage(event) {
     storeIdOper(event, "token", "errorCode", validaciones);
     token = document.getElementById('token').value;
     //enlace.href = '/api/autorizacion/' + token + '/' + order + '/7895/iii';
-    //iniciar.href = '/api/iniciarPeticion/' + token + '/' + order + '/7895/iii';
-    console.log('order: ')
-    console.log( order );
-    console.log('token: ');
-    console.log( token );
+    iniciarGet = '/api/iniciarPeticion/' + token + '/' + order + '/7895/iii';
+    console.log(iniciarGet);
 
 });
 
