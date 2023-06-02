@@ -7,9 +7,10 @@
 
         {% if protocol == 2 %}
 
-            <
+            <H1>Challenge version 2</H1>
             <form action="{{ acsURL }}" method="POST" enctype="application/x-www-form-urlencoded">
                 <input type="hidden" name="creq" value="{{ creq }}">
+                <input type="submit">
             </form>
 
         {% else %}

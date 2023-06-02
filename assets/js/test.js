@@ -9,6 +9,7 @@ let protocolVersion;
 let autorizationGet = '';
 let autorizacionPayLoad;
 let iniciarGet;
+let challenge;
 
 import axios from "axios";
 
@@ -20,11 +21,25 @@ function validaciones() {
 
 tratar.addEventListener('click', function()
 {
-    axios.post('/api/autorizacion/',
-        autorizacionPayLoad)
+    let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: '/api/autorizacion',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data : autorizacionPayLoad
+    }
+    axios.request(config)
         .then(function (response) {
-            if (response.data)
+            //evaluo si es challenge para redireccionar
+            if ( response.data.challenge )
             {
+                console.log(response.data.outDsEmv3DS.acsURL);
+                location.href ='api/challenge/' + btoa(encodeURIComponent(response.data.outDsEmv3DS.acsURL)) + '/'
+                + response.data.outDsEmv3DS.creq;
+
+            } else {
                 console.log(response.data);
             }
         })
@@ -43,11 +58,11 @@ iniciar.addEventListener('click', function() {
             autorizacionPayLoad = {
                 token: token,
                 amount: '7878',
-                order: order,
+                order: order.toString(),
                 idCarrito: 'carritoId',
                 dsServerTransId: response.data.threeDServerTransID,
                 protocolVersion: response.data.protocolVersion,
-                dsMethodUrl: 'test'//response.data.threeDSMethodURL
+                dsMethodUrl: response.data.threeDSMethodURL
             };
 
 
@@ -68,7 +83,7 @@ window.addEventListener("message", function receiveMessage(event) {
     storeIdOper(event, "token", "errorCode", validaciones);
     token = document.getElementById('token').value;
     //enlace.href = '/api/autorizacion/' + token + '/' + order + '/7895/iii';
-    iniciarGet = '/api/iniciarPeticion/' + token + '/' + order + '/7895/iii';
+    iniciarGet = '/api/iniciarPeticion/' + token + '/' + order + '/7878/iii';
     console.log(iniciarGet);
 
 });

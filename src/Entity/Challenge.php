@@ -4,6 +4,7 @@ namespace App\Entity;
 
 class Challenge
 {
+    private bool $challenge = true;
     private string $amount;
     private string $currency;
     private string $order;
@@ -12,6 +13,24 @@ class Challenge
     private string $transactionType;
 
     private OutDsEmv3DS $outDsEmv3DS;
+
+    /**
+     * @return bool
+     */
+    public function isChallenge(): bool
+    {
+        return $this->challenge;
+    }
+
+    /**
+     * @param bool $challenge
+     * @return Challenge
+     */
+    public function setChallenge(bool $challenge): Challenge
+    {
+        $this->challenge = $challenge;
+        return $this;
+    }
 
     /**
      * @return OutDsEmv3DS
@@ -31,12 +50,12 @@ class Challenge
 
         $emv3ds = new OutDsEmv3DS();
 
-        dd($outDsEmv3DS);
+        //dd($outDsEmv3DS);
 
         $emv3ds->setAcsURL($outDsEmv3DS['acsURL'])
-            ->setCreq($outDsEmv3DS['PAReq'])
-            ->setProtocolVersion('2.1.0')
-            ->setThreeDSInfo('ChallengeRequest');
+            ->setCreq($outDsEmv3DS['creq'])
+            ->setProtocolVersion($outDsEmv3DS['protocolVersion'])
+            ->setThreeDSInfo($outDsEmv3DS['threeDSInfo']);
 
         $this->outDsEmv3DS = $emv3ds;
 
