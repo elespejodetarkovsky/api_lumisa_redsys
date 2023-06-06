@@ -12,17 +12,14 @@ use App\Repository\DsResponseRepository;
 use App\Repository\NotificationUrlRepository;
 use App\Repository\ResponseErrorRepository;
 use App\Utils\RESTConstants;
+use App\Utils\Util;
 use Doctrine\ORM\EntityManagerInterface;
-use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use function Symfony\Component\String\u;
 
@@ -43,8 +40,7 @@ class RedsysController extends AbstractController
                                 private DsResponseRepository $dsResponseRepository,
                                 private RouterInterface $router,
                                 private NotificationUrlRepository $notificationUrlRepository,
-                                private string $token = '',
-                                private string $idCarrito = '')
+                                private string $token = '')
     {
         $this->redsysAPI = new RedsysAPI();
     }
@@ -107,12 +103,11 @@ class RedsysController extends AbstractController
 
 
     //TODO se usará en caso de iniciar la petición con autenticacion
-    #[Route('/iniciarPeticion/{token}/{order}/{amount}/{idCarrito}', name: 'app_redsys_init')]
-    public function initPeticion(string $token, string $order, string $amount, string $idCarrito): Response
+    #[Route('/iniciarPeticion/{token}/{order}/{amount}', name: 'app_redsys_init')]
+    public function initPeticion(string $token, string $order, string $amount): Response
     {
 
         $this->token                = $token;
-        $this->idCarrito            = $idCarrito;
         $this->amount               = $amount;
         $this->order                = $order;
 
@@ -176,51 +171,14 @@ class RedsysController extends AbstractController
 
 
         //Realizo el cuerpo de peticion en función de lo que solicite el front
-            if( $autorizationPayLoad->getDsMethodUrl() == null )
-            {
 
-                $petition = $this->autorizationRest($autorizationPayLoad->getOrder(),
-                    '0',
-                    $autorizationPayLoad->getAmount(),
-                    $autorizationPayLoad->getToken(),
-                    array(RESTConstants::$REQUEST_MERCHANT_EMV3DS_THREEDSINFO => RESTConstants::$REQUEST_MERCHANT_EMV3DS_AUTHENTICACIONDATA,
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION => $autorizationPayLoad->getProtocolVersion(),
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER_VALUE,
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT_VALUE,
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_JAVA_ENABLE => 'false',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_LANGUAGE => 'ES-es',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_COLORDEPTH => '24',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_HEIGHT => '1250',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_WIDTH => '1320',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_TZ => '52',
-                        "threeDSServerTransID" => $autorizationPayLoad->getDsServerTransId(),
-                        "threeDSCompInd" => "N")
-                );
-
-            } else {
-
-                $petition = $this->autorizationRest($autorizationPayLoad->getOrder(),
-                    '0',
-                    $autorizationPayLoad->getAmount(),
-                    $autorizationPayLoad->getToken(),
-                    array(RESTConstants::$REQUEST_MERCHANT_EMV3DS_THREEDSINFO => RESTConstants::$REQUEST_MERCHANT_EMV3DS_AUTHENTICACIONDATA,
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION => $autorizationPayLoad->getProtocolVersion(),
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_ACCEPT_HEADER_VALUE,
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT => RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_USER_AGENT_VALUE,
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_JAVA_ENABLE => 'false',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_JAVASCRIPT_ENABLE => 'false',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_LANGUAGE => 'ES-es',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_COLORDEPTH => '24',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_HEIGHT => '1250',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_WIDTH => '1320',
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_TZ => '52',
-                        "threeDSServerTransID" => $autorizationPayLoad->getDsServerTransId(),
-                        RESTConstants::$REQUEST_MERCHANT_EMV3DS_NOTIFICATIONURL => 'https://127.0.0.1:8000/api/notificacionURL',
-                        "threeDSCompInd" => "Y")
-                );
-
-
-            }
+        $petition = $this->autorizationRest($autorizationPayLoad->getOrder(),
+            '0',
+            $autorizationPayLoad->getAmount(),
+            $autorizationPayLoad->getToken(),
+            Util::makeMerchantEmv3ds(!($autorizationPayLoad->getDsMethodUrl() == null), $autorizationPayLoad->getDsServerTransId(),
+                $this->order, $autorizationPayLoad->getProtocolVersion())
+        );
 
 
         return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
@@ -381,39 +339,42 @@ class RedsysController extends AbstractController
             $cardNumber         = $this->redsysAPI->getParameter('Ds_CardNumber');
             $amount             = $this->redsysAPI->getParameter('Ds_Amount');
             $currency           = $this->redsysAPI->getParameter('Ds_Currency');
-            $dsEmv3DS           = $this->redsysAPI->getParameter('Ds_EMV3DS');
+            $dsEmv3DS           = $this->redsysAPI->getParameter('Ds_EMV3DS') ?? null; //no existirá en caso de frictionless
             $order              = $this->redsysAPI->getParameter('Ds_Order');
 
             //si es null Ds_Response y recibo la solicitud de challenge deberé gestionarlo
             //devolveré un objeto challenge
-            dump($decode);
 
-            if( $dsEmv3DS['threeDSInfo'] == 'ChallengeRequest' && $codigoRespuesta == null )
+            //realizo el challenge si no existe será frictionless y será el final de la operación
+            if ( $dsEmv3DS != null )
             {
-                $challenge = new Challenge();
+                if( $dsEmv3DS['threeDSInfo'] == 'ChallengeRequest' && $codigoRespuesta == null )
+                {
+                    $challenge = new Challenge();
 
-                $challenge->setAmount($amount)
-                    ->setCurrency($this->getParameter('app.currency'))
-                    ->setOrder($order)
-                    ->setMerchantCode($this->getParameter('app.fuc'))
-                    ->setTerminal($this->getParameter('app.terminal'))
-                    ->setOutDsEmv3DS($dsEmv3DS);
+                    $challenge->setAmount($amount)
+                        ->setCurrency($this->getParameter('app.currency'))
+                        ->setOrder($order)
+                        ->setMerchantCode($this->getParameter('app.fuc'))
+                        ->setTerminal($this->getParameter('app.terminal'))
+                        ->setOutDsEmv3DS($dsEmv3DS);
 
-                //guardaré antes de enviar el challenge los datos que requeriré
-                //para enviar la confirmación final con el cres obtenido del banco
-                //TODO hacer esto con sesiones mejor
-                $notificacionUrl    = $this->notificationUrlRepository->findOneBy(['id' => 1]);
-                $notificacionUrl->setAmount($this->amount)
-                    ->setOrderId($this->order)
-                    ->setIdOper($this->token);
+                    //guardaré antes de enviar el challenge los datos que requeriré
+                    //para enviar la confirmación final con el cres obtenido del banco
+                    $notificacionUrl = new NotificationUrl();
+                    $notificacionUrl->setAmount($amount)
+                        ->setOrderId($order)
+                        ->setIdOper($this->token)
+                        ->setProtocolVersion($dsEmv3DS['protocolVersion']);
 
-                //luegcuando reciba el cres lo agregaré y haré la redireccion de exito si fue bien
+                    //luegcuando reciba el cres lo agregaré y haré la redireccion de exito si fue bien
 
-                $this->notificationUrlRepository->save($notificacionUrl, true);
+                    $this->notificationUrlRepository->save($notificacionUrl, true);
 
-                //dd($notificacionUrl);
 
-                return $challenge;
+                    return $challenge;
+
+                }
             }
 
             //será 0000 a 0099
@@ -429,7 +390,6 @@ class RedsysController extends AbstractController
                     ->setCountry($this->redsysAPI->getParameter('Ds_Card_Country'))
                     ->setToken($this->token)
                     ->setCardNumber($cardNumber)
-                    ->setIdMedusa($this->idCarrito)
                     ->setTransactionType(RedsysAPI::AUTHORIZATION)
                     ->setAuthorized(str_contains( $codigoRespuesta, '00'));
 
@@ -441,7 +401,7 @@ class RedsysController extends AbstractController
 
                 if ($signatureCalculada === $signatureRecibida) {
 
-                    //si estoy aquí ya puedo guardar en la base de datos
+                    //si estoy aquí ya puedo guardar en la base de datos y el order no podrá repetirse
                     $this->entityManager->persist($transaction);
                     $this->entityManager->flush();
 
@@ -454,13 +414,13 @@ class RedsysController extends AbstractController
             } elseif ( $codigoRespuesta == '0195' )
             {
 
-                //TODO Redirigir a PSD2
-                return $codigoRespuesta;
+                //TODO Redirigir a PSD2?
+                return '"{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
 
             } else {
 
-                //TODO ERROR EN LA OPERACION
-                return $codigoRespuesta;
+                //OTRO ERROR, DE AUTENTICACION, RECHAZO POR CLIENTE ETC
+                return '"{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
 
             }
 
@@ -483,25 +443,25 @@ class RedsysController extends AbstractController
 
     }
 
-    #[Route('/notificacionURL', name: 'app_redsys_notification', methods: 'post')]
-    public function notificacionURL(Request $request): Response
+    #[Route('/notificacionURL/{order}', name: 'app_redsys_notification')]
+    public function notificacionURL(Request $request, string $order): Response
     {
         //si todo ha ido bien recibiré el parámetro cres para hacer la petición final
         $cres               = $request->request->get('cres');
 
-        $notificacionUrl    = $this->notificationUrlRepository->findOneBy(['id' => 1]);
+        //el valor debería ser único
+        $notificacionUrl    = $this->notificationUrlRepository->findOneBy(['orderId' => $order]);
 
         $notificacionUrl->setCres( $cres );
 
-        $emv3DS = array('threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => '2.1.0',
+        $emv3DS = array('threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
             'cres' => $cres);
 
-        dump($emv3DS);
 
         $petition = $this->autorizationRest($notificacionUrl->getOrderId(),'0', $notificacionUrl->getAmount(),
                             $notificacionUrl->getIdOper(), $emv3DS);
 
-
+        //TODO Eliminar la linea del order una vez recibida
         return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
 
 

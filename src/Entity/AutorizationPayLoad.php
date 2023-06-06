@@ -8,7 +8,6 @@ class AutorizationPayLoad
     private string $token;
     private string $amount;
     private string $order;
-    private string $idCarrito;
     private string $dsServerTransId;
     private string $protocolVersion;
     private ?string $dsMethodUrl = null;
@@ -72,24 +71,6 @@ class AutorizationPayLoad
     /**
      * @return string
      */
-    public function getIdCarrito(): string
-    {
-        return $this->idCarrito;
-    }
-
-    /**
-     * @param string $idCarrito
-     * @return AutorizationPayLoad
-     */
-    public function setIdCarrito(string $idCarrito): AutorizationPayLoad
-    {
-        $this->idCarrito = $idCarrito;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
     public function getDsServerTransId(): string
     {
         return $this->dsServerTransId;
@@ -126,7 +107,7 @@ class AutorizationPayLoad
     /**
      * @return string
      */
-    public function getDsMethodUrl(): string
+    public function getDsMethodUrl(): ?string
     {
         return $this->dsMethodUrl;
     }
@@ -135,9 +116,10 @@ class AutorizationPayLoad
      * @param string $dsMethodUrl
      * @return AutorizationPayLoad
      */
-    public function setDsMethodUrl(?string $dsMethodUrl): AutorizationPayLoad
+    public function setDsMethodUrl(?string $dsMethodUrl = null): AutorizationPayLoad
     {
         $this->dsMethodUrl = $dsMethodUrl;
+
         return $this;
     }
 
