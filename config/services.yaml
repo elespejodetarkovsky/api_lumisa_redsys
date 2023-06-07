@@ -9,6 +9,8 @@ parameters:
     app.currency: '%env(CURRENCY)%'
     app.clave.comercio: '%env(CLAVE_COMERCIO)%'
     app.url.redsys: '%env(URL_REDSYS)%'
+    app.url.inicia: '%env(URL_INICIA)%'
+    app.url.trata: '%env(URL_TRATA)%'
 
 services:
     # default configuration for services in *this* file
