@@ -20,7 +20,7 @@ class Util
             RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_HEIGHT => '1250',
             RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_WIDTH => '1320',
             RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_TZ => '52',
-            RESTConstants::$REQUEST_MERCHANT_EMV3DS_NOTIFICATIONURL => 'https://127.0.0.1:8000/api/notificacionURL/'.$order,
+            RESTConstants::$REQUEST_MERCHANT_EMV3DS_NOTIFICATIONURL => 'https://oni-redsys-api.lumisa.es/api/notificacionURL/'.$order,
             "threeDSServerTransID" => $threDSServerTransId,
             "threeDSCompInd" => $threeDsCompInd ? "Y":"N"); //N en caso de no recibir la url threeDSMethodURL null
     }
