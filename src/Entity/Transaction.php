@@ -15,9 +15,6 @@ class Transaction
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $idMedusa = null;
-
     #[ORM\Column(length: 100)]
     private ?string $idOrder = null;
 
@@ -57,18 +54,6 @@ class Transaction
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getIdMedusa(): ?string
-    {
-        return $this->idMedusa;
-    }
-
-    public function setIdMedusa(string $idMedusa): self
-    {
-        $this->idMedusa = $idMedusa;
-
-        return $this;
     }
 
     public function getIdOrder(): ?string
