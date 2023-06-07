@@ -169,7 +169,6 @@ class RedsysController extends AbstractController
         $this->order                = $autorizationPayLoad->getOrder();
          //++++
 
-
         //Realizo el cuerpo de peticion en función de lo que solicite el front
 
         $petition = $this->autorizationRest($autorizationPayLoad->getOrder(),
@@ -299,10 +298,6 @@ class RedsysController extends AbstractController
         $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
         $petition["Ds_MerchantParameters"]      = $params;
         $petition["Ds_Signature"]               = $signature;
-
-        //dd($this->redsysAPI->decodeMerchantParameters($params));
-        //dd(json_encode($petition));
-        //return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
 
         return $petition;
 
