@@ -415,12 +415,12 @@ class RedsysController extends AbstractController
             {
 
                 //TODO Redirigir a PSD2?
-                return '"{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
+                return '{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
 
             } else {
 
                 //OTRO ERROR, DE AUTENTICACION, RECHAZO POR CLIENTE ETC
-                return '"{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
+                return '{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
 
             }
 
@@ -433,13 +433,20 @@ class RedsysController extends AbstractController
 
         $acsURL = urldecode(base64_decode($acsURL));
 
-        return $this->render('challenge/index.html.twig', [
+        $challenge = array('protocol' => $acsURL,
+                    'creq' => $creq,
+                    'MD' => $MD,
+                    'termUrl' => $termUrl);
+
+        return $this->json( $challenge, Response::HTTP_OK );
+
+/*        return $this->render('challenge/index.html.twig', [
             'protocol' => 2,
             'acsURL' => $acsURL,
             'creq' => $creq,
             'MD' => $MD,
             'termUrl' => $termUrl
-        ]);
+        ]);*/
 
     }
 
@@ -461,9 +468,22 @@ class RedsysController extends AbstractController
         $petition = $this->autorizationRest($notificacionUrl->getOrderId(),'0', $notificacionUrl->getAmount(),
                             $notificacionUrl->getIdOper(), $emv3DS);
 
-        //TODO Eliminar la linea del order una vez recibida
-        return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
+        //En caso de recibir el objeto y por tanto con la transaccion terminada
+        //se borra de la base de datos y se reenvia a la pagina de notificación del front
 
+        $transaction = $this->fetchRedSys(json_encode($petition));
+
+        //armo la salida
+        //$authorized = $transaction instanceof Transaction;
+
+        return $this->json($transaction, Response::HTTP_OK);
+
+
+/*        return $this->render('notificacion/index.html.twig', [
+           'orden'          => $order,
+           'authorized'     => $authorized,
+           'error'          => $authorized ? 'none' : json_decode( $transaction, true)
+        ]);*/
 
     }
 
