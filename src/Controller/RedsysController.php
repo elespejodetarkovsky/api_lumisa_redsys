@@ -101,8 +101,6 @@ class RedsysController extends AbstractController
 
     }
 
-
-    //TODO se usará en caso de iniciar la petición con autenticacion
     #[Route('/iniciarPeticion/{token}/{order}/{amount}', name: 'app_redsys_init')]
     public function initPeticion(string $token, string $order, string $amount): Response
     {
@@ -160,8 +158,6 @@ class RedsysController extends AbstractController
         /*** protocolVersion 2 corresponde a 2.1.0 o 2.2.0 ***/
         /*+* si recibo null en la url paso threeSDCompInd = N ***/
         /*** dependiendo de si se recibe response o no se continua ***/
-
-        $petition = '';
 
         //++++ se usarán en caso de ser challenge
         $this->token                = $autorizationPayLoad->getToken();
@@ -300,10 +296,6 @@ class RedsysController extends AbstractController
         $petition["Ds_MerchantParameters"]      = $params;
         $petition["Ds_Signature"]               = $signature;
 
-        //dd($this->redsysAPI->decodeMerchantParameters($params));
-        //dd(json_encode($petition));
-        //return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
-
         return $petition;
 
     }
@@ -440,14 +432,6 @@ class RedsysController extends AbstractController
 
         return $this->json( $challenge, Response::HTTP_OK );
 
-/*        return $this->render('challenge/index.html.twig', [
-            'protocol' => 2,
-            'acsURL' => $acsURL,
-            'creq' => $creq,
-            'MD' => $MD,
-            'termUrl' => $termUrl
-        ]);*/
-
     }
 
     #[Route('/notificacionURL/{order}', name: 'app_redsys_notification')]
@@ -469,21 +453,13 @@ class RedsysController extends AbstractController
                             $notificacionUrl->getIdOper(), $emv3DS);
 
         //En caso de recibir el objeto y por tanto con la transaccion terminada
-        //se borra de la base de datos y se reenvia a la pagina de notificación del front
+        //TODO se borra de la base de datos y se reenvia a la pagina de notificación del front
 
         $transaction = $this->fetchRedSys(json_encode($petition));
 
-        //armo la salida
-        //$authorized = $transaction instanceof Transaction;
 
+        //TODO aquí se realizará la redireccion al front de lumisolar
         return $this->json($transaction, Response::HTTP_OK);
-
-
-/*        return $this->render('notificacion/index.html.twig', [
-           'orden'          => $order,
-           'authorized'     => $authorized,
-           'error'          => $authorized ? 'none' : json_decode( $transaction, true)
-        ]);*/
 
     }
 
