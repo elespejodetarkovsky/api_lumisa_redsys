@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello HomeController!{% endblock %}
+
+{% block body %}
+    <div class="container">
+
+            <H1>3DSMethod Init</H1>
+            <form action="{{ threeDSMethodURL }}" method="POST" enctype="application/x-www-form-urlencoded">
+                <input type="hidden" name="threeDSMethodData" value="{{ threeDSMethodData }}">
+                <input type="submit">
+            </form>
+
+    </div>
+    <!-- /.container -->
+{% endblock %}

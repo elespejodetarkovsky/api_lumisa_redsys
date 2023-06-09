@@ -10,6 +10,25 @@ class Emv3DS
     private ?string $threeDSMethodURL;
 
     private string $cardPSD2;
+    private ?string $threeDSMethodData;
+
+    /**
+     * @return string
+     */
+    public function getThreeDSMethodData(): ?string
+    {
+        return $this->threeDSMethodData;
+    }
+
+    /**
+     * @param string $threeDSMethodData
+     * @return Emv3DS
+     */
+    public function setThreeDSMethodData(?string $threeDSMethodData): Emv3DS
+    {
+        $this->threeDSMethodData = $threeDSMethodData;
+        return $this;
+    }
 
     /**
      * @return string
@@ -86,7 +105,7 @@ class Emv3DS
     /**
      * @return string
      */
-    public function getThreeDSMethodURL(): string
+    public function getThreeDSMethodURL(): ?string
     {
         return $this->threeDSMethodURL;
     }
