@@ -7,7 +7,7 @@ use phpDocumentor\Reflection\Types\This;
 class Util
 {
     static public function makeMerchantEmv3ds(bool $threeDsCompInd, string $threDSServerTransId,
-                                              string $order, string $protocolVersion): array
+                                              string $order, string $protocolVersion, string $notificationUrl): array
     {
         return array(RESTConstants::$REQUEST_MERCHANT_EMV3DS_THREEDSINFO => RESTConstants::$REQUEST_MERCHANT_EMV3DS_AUTHENTICACIONDATA,
             RESTConstants::$REQUEST_MERCHANT_EMV3DS_PROTOCOLVERSION => $protocolVersion,
@@ -20,7 +20,7 @@ class Util
             RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_HEIGHT => '1250',
             RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_SCREEN_WIDTH => '1320',
             RESTConstants::$REQUEST_MERCHANT_EMV3DS_BROWSER_TZ => '52',
-            RESTConstants::$REQUEST_MERCHANT_EMV3DS_NOTIFICATIONURL => 'https://oni-redsys-api.lumisa.es/api/notificacionURL/'.$order,
+            RESTConstants::$REQUEST_MERCHANT_EMV3DS_NOTIFICATIONURL => $notificationUrl.$order,
             "threeDSServerTransID" => $threDSServerTransId,
             "threeDSCompInd" => $threeDsCompInd ? "Y":"N"); //N en caso de no recibir la url threeDSMethodURL null
     }

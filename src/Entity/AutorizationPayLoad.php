@@ -2,14 +2,23 @@
 
 namespace App\Entity;
 
+
+use App\Repository\AutorizationPayLoadRepository;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Doctrine\ORM\Mapping as ORM;
+
 class AutorizationPayLoad
 {
 
     private string $token;
+
     private string $amount;
+
     private string $order;
+
     private string $dsServerTransId;
     private string $protocolVersion;
+
     private ?string $dsMethodUrl = null;
 
 

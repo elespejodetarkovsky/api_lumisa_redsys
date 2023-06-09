@@ -49,7 +49,7 @@ tratar.addEventListener('click', function()
 
                     console.log( response.data )
 
-                    //formChallenge.submit();
+                    formChallenge.submit();
 
                 } else
                 {
@@ -86,6 +86,14 @@ iniciar.addEventListener('click', function() {
 
             console.log(autorizationGet)
             console.log(autorizacionPayLoad);
+            console.log(response.data);
+
+            if ( !!response.data.threeDSMethodURL )
+            {
+                //realizo la redireccion a 3dmethod url
+                //location.href = '/api/threeDsMethodTestForm/' + response.data.threeDSMethodData + '/' + btoa(response.data.threeDSMethodURL)
+                window.open('/api/threeDsMethodTestForm/' + response.data.threeDSMethodData + '/' + btoa(response.data.threeDSMethodURL), '_blank')
+            }
 
         })
         .catch(function (error) {
@@ -118,4 +126,4 @@ function pedido() {
 getCardInput('card-number', '', '', '');
 getExpirationInput('card-expiration', '', '');
 getCVVInput('cvv', '', '');
-getPayButton('boton', '', 'Texto botón pago', '999008881', '1', pedido());
+getPayButton('boton', '', 'Texto botón pago', '097739635', '1', pedido());
