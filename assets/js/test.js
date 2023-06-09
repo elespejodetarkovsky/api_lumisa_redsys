@@ -1,5 +1,9 @@
-let tratar      = document.getElementById('tratar');
-let iniciar     = document.getElementById('iniciar');
+let tratar          = document.getElementById('tratar');
+let iniciar         = document.getElementById('iniciar');
+let formChallenge   = document.getElementById('frmChallenge');
+let creq            = document.getElementById('creq');
+
+
 let order;
 let token;
 let threeDServerTransID;
@@ -9,7 +13,6 @@ let protocolVersion;
 let autorizationGet = '';
 let autorizacionPayLoad;
 let iniciarGet;
-let challenge;
 
 
 import axios from "axios";
@@ -34,11 +37,24 @@ tratar.addEventListener('click', function()
     axios.request(config)
         .then(function (response) {
             //evaluo si es challenge para redireccionar
-            if ( response.data.challenge )
+            if ( response.data )
             {
-                console.log(response.data.outDsEmv3DS.acsURL);
-                location.href ='api/challenge/' + btoa(encodeURIComponent(response.data.outDsEmv3DS.acsURL)) + '/'
-                + response.data.outDsEmv3DS.creq;
+
+                if ( response.data.outDsEmv3DS )
+                {
+                    //existe por tanto es un challenge asumo que es 2.x.0
+                    console.log( response.data.outDsEmv3DS );
+                    formChallenge.action    = response.data.outDsEmv3DS.acsURL;
+                    creq.value         = response.data.outDsEmv3DS.creq;
+
+                    console.log( response.data )
+
+                    //formChallenge.submit();
+
+                } else
+                {
+                    console.log({ 'transaction' : response.data });
+                }
 
             } else {
                 console.log(response.data);
