@@ -256,7 +256,7 @@ class RedsysController extends AbstractController
             {
 
                 $objEmv3ds->setThreeDSMethodData(base64_encode(json_encode(array('threeDSServerTransID' => $emv3ds['threeDSServerTransID'],
-                    'threeDSMethodNotificationURL' => 'https://127.0.0.1:8000/api/threeDSMethodNotificacionURL/'.$emv3ds['threeDSServerTransID']))));
+                    'threeDSMethodNotificationURL' => $this->getParameter('app.url.notification.ds.method').$emv3ds['threeDSServerTransID']))));
 
             }
 
@@ -492,13 +492,11 @@ class RedsysController extends AbstractController
     #[Route('/threeDSMethodNotificacionURL/{threeDSMethodData}', name: 'app_redsys_notification_dsmethod')]
     public function notificacion3DSMethod(Request $request, string $threeDSMethodData): Response
     {
-        //si todo ha ido bien recibiré el parámetro cres para hacer la petición final
         $threeDSMethodDataJson              = json_decode(base64_decode($request->request->get('threeDSMethodData')), true);
 
 
         //realizo una comparación entre el id del parámetro y el del post pasado por la entidad
         //se podría realizar alguna comprobación más tambien
-        var_dump($threeDSMethodDataJson['threeDSServerTransID']);
         if ( $threeDSMethodDataJson['threeDSServerTransID'] == $threeDSMethodData )
         {
             return $this->json(['3DSMethod' => 'OK'], Response::HTTP_OK);

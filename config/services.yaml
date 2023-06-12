@@ -12,6 +12,7 @@ parameters:
     app.url.inicia: '%env(URL_INICIA)%'
     app.url.trata: '%env(URL_TRATA)%'
     app.url.notification: '%env(NOTIFICATION_URL)%'
+    app.url.notification.ds.method: '%env(NOTIFICATION_DSMETHOD_URL)%'
 
 services:
     # default configuration for services in *this* file
