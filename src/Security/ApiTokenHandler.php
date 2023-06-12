@@ -19,14 +19,10 @@ class ApiTokenHandler implements AccessTokenHandlerInterface
     {
         $token = $this->apiTokenRepository->findOneBy(['token' => $accessToken]);
 
-
-
         if (!$token)
         {
             throw new BadCredentialsException();
         }
-
-
 
         if (!$token->isValid())
         {

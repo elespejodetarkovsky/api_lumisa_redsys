@@ -34,7 +34,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean')]
     private $isVerified = false;
 
-    #[ORM\OneToMany(mappedBy: 'ownedBy', targetEntity: ApiToken::class)]
+    #[ORM\OneToMany(mappedBy: 'ownedBy', targetEntity: ApiToken::class, cascade: ['persist'])]
     private Collection $apiTokens;
 
 
@@ -173,6 +173,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             ->map(fn (ApiToken $token) => $token->getToken())
             ->toArray()
             ;
+    }
+
+    public function getInvalidTokenStrings(): Collection
+    {
+        return $this->getApiTokens()
+            ->filter(fn (ApiToken $token) => !$token->isValid())
+            ;
+    }
+    public function setNewTokenInUser(): ApiToken
+    {
+        //se añadirá un token al usuario
+
+        $token = new ApiToken();
+
+        $token->setScopes([ApiToken::SCOPE_ADMIN]);
+        $token->setOwnedBy($this);
+
+        return $token;
+    }
+
+    public function removeOldApiToken()
+    {
+        //se remueven los token vencidos del usuario
+
+        $tokens = $this->getInvalidTokenStrings(); //me dará los tokens vencidos
+
+        foreach ( $tokens as $token )
+        {
+            $this->removeApiToken($token);
+        }
+
+
     }
 
     public function markAsTokenAuthenticated(array $scopes): void

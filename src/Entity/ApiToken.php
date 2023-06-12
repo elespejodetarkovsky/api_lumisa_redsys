@@ -4,8 +4,10 @@ namespace App\Entity;
 
 use App\Repository\ApiTokenRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 
 #[ORM\Entity(repositoryClass: ApiTokenRepository::class)]
+#[HasLifecycleCallbacks]
 class ApiToken
 {
 
@@ -43,7 +45,14 @@ class ApiToken
     #[ORM\Column]
     private array $scopes = [];
 
+    #[ORM\PrePersist]
+    public function setCreatedAtValue()
+    {
+        $date = new \DateTimeImmutable('now +2 hours');
+        //$date->add(new \DateInterval("PT2H"));
 
+        $this->setExpiresAt($date);
+    }
     public function __construct(string $tokenType = self::PERSONAL_ACCESS_TOKEN_PREFIX)
     {
 
