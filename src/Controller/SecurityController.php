@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\ApiToken;
 use App\Entity\User;
 use App\Repository\ApiTokenRepository;
 use App\Repository\UserRepository;
@@ -34,20 +33,20 @@ class SecurityController extends AbstractController
          *  una validez de 2 horas borro los anteriores que pueda tener ****
          *******************************************************************/
 
-        //$user->setNewTokenInUser();
+        //quitará los tokens caducados que pueda tener el usuario
+        foreach ( $user->getInvalidTokenStrings() as $token )
+        {
+            $this->apiTokenRepository->remove( $token, true);
+        }
 
-        /* actualizo el token la db */
+        $newToken          = $user->setNewTokenInUser();
 
-        $token = $user->setNewTokenInUser();
-
-        $user->removeOldApiToken();
-
-        //$this->apiTokenRepository->save($token, true);
-        $this->userRepository->save($user, true);
+        //almaceno el nuevo token
+        $this->apiTokenRepository->save($newToken, true);
 
         return $this->json([
             'user'      => $user->getId(),
-            'token'     => $user->getApiTokens()->first()->getToken(),
+            'token'     => $newToken->getToken(),
             'roles'     => $user->getRoles()
         ]);
     }

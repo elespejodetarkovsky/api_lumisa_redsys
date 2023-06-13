@@ -126,4 +126,4 @@ function pedido() {
 getCardInput('card-number', '', '', '');
 getExpirationInput('card-expiration', '', '');
 getCVVInput('cvv', '', '');
-getPayButton('boton', '', 'Texto botón pago', '097739635', '1', pedido());
+getPayButton('boton', '', 'Texto botón pago', '999008881', '1', pedido());

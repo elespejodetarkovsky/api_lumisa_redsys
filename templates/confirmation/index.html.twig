@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello HomeController!{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+
+    <H3>Confirmar Challenge</H3>
+    <button id="confirmar">Confirmar Autorizacion</button>
+    {{ dump( confirmationPayLoad ) }}
+{% endblock %}
+
+{% block javascripts %}
+    <script !src="">
+
+        window.confirmationPayLoad = {{ confirmationPayLoad | raw }};
+
+        console.log( window );
+
+    </script>
+    {{ encore_entry_script_tags('test') }}
+{% endblock %}

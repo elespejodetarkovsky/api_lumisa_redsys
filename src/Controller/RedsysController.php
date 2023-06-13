@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\AutorizationPayLoad;
 use App\Entity\Challenge;
+use App\Entity\ConfirmationPayLoad;
 use App\Entity\Emv3DS;
 use App\Entity\NotificationUrl;
 use App\Entity\Transaction;
@@ -14,8 +15,6 @@ use App\Repository\ResponseErrorRepository;
 use App\Utils\RESTConstants;
 use App\Utils\Util;
 use Doctrine\ORM\EntityManagerInterface;
-use phpDocumentor\Reflection\Types\Null_;
-use phpDocumentor\Reflection\Types\This;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -178,6 +177,27 @@ class RedsysController extends AbstractController
 
 
         return $this->json($this->fetchRedSys(json_encode($petition)), Response::HTTP_OK);
+
+    }
+
+    #[Route('/confirmacion_autorizacion', name: 'app_redsys_confirmacion_api', methods: 'post')]
+    public function confirmacionAutorization(#[MapRequestPayload] ConfirmationPayLoad $confirmationPayLoad): Response
+    {
+
+        $petition = $this->autorizationRest($confirmationPayLoad->getOrderId(),'0', $confirmationPayLoad->getAmount(),
+            $confirmationPayLoad->getIdOper(), $confirmationPayLoad->getEmv3DS());
+
+        //En caso de recibir el objeto y por tanto con la transaccion terminada
+        //TODO se borra de la base de datos y se reenvia a la pagina de notificación del front
+
+        $transaction = $this->fetchRedSys(json_encode($petition));
+
+
+        /*
+         * si ha ido bien devolverá el objeto transaction
+         */
+        return $this->json($transaction, Response::HTTP_OK);
+
 
     }
 
@@ -449,61 +469,12 @@ class RedsysController extends AbstractController
 
 
         return $this->render('api/threeDSMethodForm.html.twig',
-        [
-           'threeDSMethodURL' =>  base64_decode($threeDSMethodURL),
-           'threeDSMethodData' => $threeDSMethodData
-        ]);
-
-
-    }
-
-    #[Route('/notificacionURL/{order}', name: 'app_redsys_notification')]
-    public function notificacionURL(Request $request, string $order): Response
-    {
-        //si todo ha ido bien recibiré el parámetro cres para hacer la petición final
-        $cres               = $request->request->get('cres');
-
-        //el valor debería ser único
-        $notificacionUrl    = $this->notificationUrlRepository->findOneBy(['orderId' => $order]);
-
-        $notificacionUrl->setCres( $cres );
-
-        $emv3DS = array('threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
-            'cres' => $cres);
-
-
-        $this->notificationUrlRepository->save($notificacionUrl, true);
-
-        $petition = $this->autorizationRest($notificacionUrl->getOrderId(),'0', $notificacionUrl->getAmount(),
-                            $notificacionUrl->getIdOper(), $emv3DS);
-
-        //En caso de recibir el objeto y por tanto con la transaccion terminada
-        //TODO se borra de la base de datos y se reenvia a la pagina de notificación del front
-
-        $transaction = $this->fetchRedSys(json_encode($petition));
-
-
-        //TODO aquí se realizará la redireccion al front de lumisolar
-        return $this->json($transaction, Response::HTTP_OK);
+            [
+                'threeDSMethodURL' => base64_decode($threeDSMethodURL),
+                'threeDSMethodData' => $threeDSMethodData
+            ]);
 
     }
 
-
-    #[Route('/threeDSMethodNotificacionURL/{threeDSMethodData}', name: 'app_redsys_notification_dsmethod')]
-    public function notificacion3DSMethod(Request $request, string $threeDSMethodData): Response
-    {
-        $threeDSMethodDataJson              = json_decode(base64_decode($request->request->get('threeDSMethodData')), true);
-
-
-        //realizo una comparación entre el id del parámetro y el del post pasado por la entidad
-        //se podría realizar alguna comprobación más tambien
-        if ( $threeDSMethodDataJson['threeDSServerTransID'] == $threeDSMethodData )
-        {
-            return $this->json(['3DSMethod' => 'OK'], Response::HTTP_OK);
-        } else {
-            return $this->json(['3DSMethod' => 'KAO'], Response::HTTP_OK);
-        }
-
-    }
 
 }
