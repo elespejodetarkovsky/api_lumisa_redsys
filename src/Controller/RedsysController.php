@@ -180,6 +180,51 @@ class RedsysController extends AbstractController
 
     }
 
+    #[Route('/devolucion', name: 'app_redsys_devoluciones_api', methods: 'post')]
+    public function devolucion(Request $request): Response
+    {
+
+        $payLoad    = json_decode($request->getContent(), true);
+        $idOper     = $payLoad['idOper'];
+        $order      = $payLoad['order'];
+        $amount     = $payLoad['amount'];
+
+        $transaction    = $this->entityManager->getRepository(Transaction::class)->findOneBy(['token' => $idOper, 'idOrder' => $order, 'cantidad' => $amount, 'authorized' => true]) ?? null;
+
+
+        if ( $transaction instanceof Transaction)
+        {
+            $petition       = $this->peticionDevolucion($order, $amount);
+
+            $responseDev    = $this->fetchRedSys(json_encode($petition));
+
+            if ( isset( $responseDev['0900']) )
+            {
+                $now = new \DateTimeImmutable('now');
+
+                /*ha sido exitosa la devolución se actualiza el estado en la db*/
+                $transaction->setEstado('0900')
+                    ->setTransactionType('3')
+                    ->setRespuesta('devolucion hecha correctamente el: '.$now->format('Y-m-d H:i:s'));
+
+                $this->entityManager->persist($transaction);
+                $this->entityManager->flush();
+
+            }
+
+            return $this->json( ['id' => $transaction->getId(), 'order' => $order,
+                'observaciones' => 'devolucion hecha correctamente'], Response::HTTP_OK);
+
+        } else {
+
+            return $this->json(['error' => 'la operacion no ha sido encontrada en la base de datos'], Response::HTTP_OK);
+
+        }
+
+
+
+    }
+
     #[Route('/confirmacion_autorizacion', name: 'app_redsys_confirmacion_api', methods: 'post')]
     public function confirmacionAutorization(#[MapRequestPayload] ConfirmationPayLoad $confirmationPayLoad): Response
     {
@@ -201,7 +246,7 @@ class RedsysController extends AbstractController
 
     }
 
-    private function fetchRedSys($body, bool $init = false): Transaction|Emv3DS|Challenge|string
+    private function fetchRedSys($body, bool $init = false): Transaction|Emv3DS|Challenge|string|array
     {
 
         $response = $this->client->request(
@@ -328,7 +373,32 @@ class RedsysController extends AbstractController
         return $petition;
 
     }
+    private function peticionDevolucion( string $order, string $amount ): array
+    {
 
+        //limpio los parametros
+        $this->redsysAPI = new RedsysAPI();
+
+        $this->redsysAPI->setParameter("DS_MERCHANT_ORDER",$order);
+        $this->redsysAPI->setParameter("DS_MERCHANT_MERCHANTCODE", $this->getParameter('app.fuc'));
+        $this->redsysAPI->setParameter("DS_MERCHANT_TERMINAL",$this->getParameter('app.terminal'));
+        $this->redsysAPI->setParameter("DS_MERCHANT_CURRENCY", $this->getParameter('app.currency'));
+        $this->redsysAPI->setParameter("DS_MERCHANT_TRANSACTIONTYPE", '3');
+        $this->redsysAPI->setParameter("DS_MERCHANT_AMOUNT",$amount);
+
+
+        $dsSignatureVersion     = 'HMAC_SHA256_V1';
+
+        $params = $this->redsysAPI->createMerchantParameters();
+        $signature = $this->redsysAPI->createMerchantSignature($this->getParameter('app.clave.comercio'));
+
+        $petition['Ds_SignatureVersion']        = $dsSignatureVersion;
+        $petition["Ds_MerchantParameters"]      = $params;
+        $petition["Ds_Signature"]               = $signature;
+
+        return $petition;
+
+    }
 
     /**
      * esta funcion se ejecutará en caso de que la llamada sea exitosa
@@ -338,7 +408,7 @@ class RedsysController extends AbstractController
      * @param string $responseJson
      * @return string
      */
-    private function responseTransaction(string $responseJson): Transaction|Challenge|string
+    private function responseTransaction(string $responseJson): Transaction|Challenge|string|array
     {
         $arrayResponde = json_decode($responseJson, true);
 
@@ -356,8 +426,10 @@ class RedsysController extends AbstractController
             //obtengo los datos de forma separada
             $decode             = $this->redsysAPI->decodeMerchantParameters($params);
 
+            dump($decode);
+
             $codigoRespuesta    = $this->redsysAPI->getParameter('Ds_Response');
-            $cardNumber         = $this->redsysAPI->getParameter('Ds_CardNumber');
+            $cardNumber         = $this->redsysAPI->getParameter('Ds_CardNumber') ?? '****';
             $amount             = $this->redsysAPI->getParameter('Ds_Amount');
             $currency           = $this->redsysAPI->getParameter('Ds_Currency');
             $dsEmv3DS           = $this->redsysAPI->getParameter('Ds_EMV3DS') ?? null; //no existirá en caso de frictionless
@@ -438,7 +510,13 @@ class RedsysController extends AbstractController
                 //TODO Redirigir a PSD2?
                 return '{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
 
-            } else {
+            } elseif ( $codigoRespuesta == '0900' )
+            {
+                /* este caso corresponde a una devolución exitosa */
+                return [ $codigoRespuesta => $this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta])];
+
+            } else
+            {
 
                 //OTRO ERROR, DE AUTENTICACION, RECHAZO POR CLIENTE ETC
                 return '{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';

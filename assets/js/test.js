@@ -1,5 +1,6 @@
 let tratar          = document.getElementById('tratar');
 let iniciar         = document.getElementById('iniciar');
+let devolucion      = document.getElementById('devolucion');
 let formChallenge   = document.getElementById('frmChallenge');
 let creq            = document.getElementById('creq');
 
@@ -22,6 +23,47 @@ function validaciones() {
     console.log('Aqui se pueden realizar validaciones previas a la generación del token');
     return true;
 }
+
+devolucion.addEventListener('click', function (){
+
+    let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: '/api/devolucion',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data : {
+            idOper: '3e1281c7f325c4c59616918a852f1eec4bc133df',
+            order: '1686739328',
+            amount: '7878'
+        }
+    }
+    axios.request(config)
+        .then(function (response) {
+            //evaluo si es challenge para redireccionar
+            if ( response.data )
+            {
+
+                if ( response.data )
+                {
+                    //existe por tanto es un challenge asumo que es 2.x.0
+                    console.log( response.data );
+
+                } else
+                {
+                    console.log({ 'transaction' : response.data });
+                }
+
+            } else {
+                console.log(response.data);
+            }
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+
+});
 
 tratar.addEventListener('click', function()
 {
@@ -126,4 +168,4 @@ function pedido() {
 getCardInput('card-number', '', '', '');
 getExpirationInput('card-expiration', '', '');
 getCVVInput('cvv', '', '');
-getPayButton('boton', '', 'Texto botón pago', '999008881', '1', pedido());
+getPayButton('boton', '', 'Texto botón pago', '097739635', '1', pedido());

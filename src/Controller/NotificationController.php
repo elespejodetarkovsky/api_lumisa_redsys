@@ -55,7 +55,7 @@ class NotificationController extends AbstractController
                 $notificacionUrl->setCres( $cres );
 
                 $emv3DS = array('threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
-                    'cres' => (string) $cres);
+                    'cres' =>  $cres);
 
 
 

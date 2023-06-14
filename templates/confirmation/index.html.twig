@@ -9,7 +9,7 @@
 
     <H3>Confirmar Challenge</H3>
     <button id="confirmar">Confirmar Autorizacion</button>
-    {{ dump( confirmationPayLoad ) }}
+
 {% endblock %}
 
 {% block javascripts %}
@@ -17,8 +17,6 @@
 
         window.confirmationPayLoad = {{ confirmationPayLoad | raw }};
 
-        console.log( window );
-
     </script>
-    {{ encore_entry_script_tags('test') }}
+    {{ encore_entry_script_tags('confirmar') }}
 {% endblock %}

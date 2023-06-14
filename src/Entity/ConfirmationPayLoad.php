@@ -107,7 +107,7 @@ class ConfirmationPayLoad
             '"amount":"'.$this->getAmount().'",'.
             '"idOper":"'.$this->getIdOper().'",'.
             '"transactionType":"'.$this->getTransactionType().'",'.
-            '"emv3ds":'.json_encode($this->getEmv3DS());
+            '"emv3ds":'.json_encode($this->getEmv3DS()).'}';
     }
 
     public function toJson(): string
@@ -116,7 +116,7 @@ class ConfirmationPayLoad
             '"amount":"'.$this->getAmount().'",'.
             '"idOper":"'.$this->getIdOper().'",'.
             '"transactionType":"'.$this->getTransactionType().'",'.
-            '"emv3ds"'.json_encode($this->getEmv3DS()).'}';
+            '"emv3ds":'.json_encode($this->getEmv3DS()).'}';
     }
 
 }
