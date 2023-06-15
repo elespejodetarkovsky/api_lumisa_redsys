@@ -15,6 +15,7 @@ use App\Repository\ResponseErrorRepository;
 use App\Utils\RESTConstants;
 use App\Utils\Util;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -41,6 +42,7 @@ class RedsysController extends AbstractController
                                 private DsResponseRepository $dsResponseRepository,
                                 private RouterInterface $router,
                                 private NotificationUrlRepository $notificationUrlRepository,
+                                private LoggerInterface $logger,
                                 private string $token = '')
     {
         $this->redsysAPI = new RedsysAPI();
@@ -235,6 +237,8 @@ class RedsysController extends AbstractController
         //En caso de recibir el objeto y por tanto con la transaccion terminada
         //TODO se borra de la base de datos y se reenvia a la pagina de notificación del front
 
+        $this->token = $confirmationPayLoad->getIdOper(); //en caso de exito se agregará al objeto transaction en la respuesta
+
         $transaction = $this->fetchRedSys(json_encode($petition));
 
 
@@ -426,13 +430,14 @@ class RedsysController extends AbstractController
             //obtengo los datos de forma separada
             $decode             = $this->redsysAPI->decodeMerchantParameters($params);
 
-            dump($decode);
+            $this->logger->info('DECODE:'.$decode);
+
 
             $codigoRespuesta    = $this->redsysAPI->getParameter('Ds_Response');
             $cardNumber         = $this->redsysAPI->getParameter('Ds_CardNumber') ?? '****';
             $amount             = $this->redsysAPI->getParameter('Ds_Amount');
             $currency           = $this->redsysAPI->getParameter('Ds_Currency');
-            $dsEmv3DS           = $this->redsysAPI->getParameter('Ds_EMV3DS') ?? null; //no existirá en caso de frictionless
+            $dsEmv3DS           = $this->redsysAPI->getParameter('Ds_EMV3DS') ?? null;
             $order              = $this->redsysAPI->getParameter('Ds_Order');
 
             //si es null Ds_Response y recibo la solicitud de challenge deberé gestionarlo

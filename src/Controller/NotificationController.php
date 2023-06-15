@@ -74,11 +74,11 @@ class NotificationController extends AbstractController
                     ->setTransactionType('0')
                     ->setEmv3DS($emv3DS);
 
-                //return $this->json($confirmation, Response::HTTP_OK);
-                return $this->render('confirmation/index.html.twig',
-                [
-                   'confirmationPayLoad' => $confirmation->toJson()
-                ]);
+                return $this->json($confirmation, Response::HTTP_OK);
+//                return $this->render('confirmation/index.html.twig',
+//                [
+//                   'confirmationPayLoad' => $confirmation->toJson()
+//                ]);
 
             } else {
 
