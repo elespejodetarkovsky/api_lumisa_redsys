@@ -559,5 +559,62 @@ class RedsysController extends AbstractController
 
     }
 
+    #[Route('/notificacionURL/{order}', name: 'app_redsys_notification')]
+    public function notificacionURL(Request $request, string $order): Response
+    {
+        //si todo ha ido bien recibiré el parámetro cres para hacer la petición final
+        $cres               = $request->request->get('cres');
+
+        //el valor debería ser único
+        $notificacionUrl    = $this->notificationUrlRepository->findOneBy(['orderId' => $order]);
+
+        if ( !$notificacionUrl == null )
+        {
+
+            //existe en la base de datos el order
+            $notificacionUrl->setCres( $cres );
+
+            $emv3DS = array('threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
+                'cres' =>  $cres);
+
+
+
+            //TODO si todo sale bien se borrará luego
+            $this->notificationUrlRepository->save($notificacionUrl, true);
+
+            /*
+             * se devuelve el objeto que se usará para hacer la llamada final de confirmación
+             */
+
+            $confirmation = new ConfirmationPayLoad();
+
+            $confirmation->setAmount($notificacionUrl->getAmount())
+                ->setOrderId($notificacionUrl->getOrderId())
+                ->setIdOper($notificacionUrl->getIdOper())
+                ->setTransactionType('0')
+                ->setEmv3DS($emv3DS);
+
+            $petition = $this->autorizationRest($notificacionUrl->getOrderId(),'0', $notificacionUrl->getAmount(),
+                $notificacionUrl->getIdOper(), $emv3DS);
+
+            $this->token = $notificacionUrl->getIdOper(); //en caso de exito se agregará al objeto transaction en la respuesta
+
+            $transaction = $this->fetchRedSys(json_encode($petition));
+
+
+            /*
+             * si ha ido bien devolverá el objeto transaction
+             */
+            return $this->json($transaction, Response::HTTP_OK);
+
+
+        } else {
+
+            return $this->json(['error' => 'el order solicitado no se encuentra en la base de datos'], Response::HTTP_OK);
+
+        }
+
+    }
+
 
 }

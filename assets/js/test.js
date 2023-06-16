@@ -157,7 +157,7 @@ window.addEventListener("message", function receiveMessage(event) {
 function pedido() {
 
     //genero un numero en base a date unix único
-    console.log('num_order: ');
+    //console.log('num_order: ');
     order = Math.floor(Date.now() / 1000);
 
     //como es tan estricto con el tema de los string hago la conversión
