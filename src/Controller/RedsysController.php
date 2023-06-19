@@ -25,6 +25,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Mime\Part\Multipart\FormDataPart;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use function Symfony\Component\String\u;
 
@@ -108,6 +109,7 @@ class RedsysController extends AbstractController
 
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/iniciarPeticion/{token}/{order}/{amount}', name: 'app_redsys_init')]
     public function initPeticion(string $token, string $order, string $amount): Response
     {
@@ -141,33 +143,37 @@ class RedsysController extends AbstractController
 
         /* armo la autorizationpayload que se utilizará para        */
         /* recoger los datos en caso de ser 3DSMethod y necesitarlo */
-        $autorization = new AutorizationPayLoad();
 
-        $autorization->setToken($token)
-            ->setAmount($amount)
-            ->setOrderId($order);
+        /* TODO luego evaluará automáticamente si es necesario tratar o no
+//        $autorization = new AutorizationPayLoad();
+//
+//        $autorization->setToken($token)
+//            ->setAmount($amount)
+//            ->setOrderId($order);
+//
+//
+//        //realizo la peticion
+//        $threeDsMethod = $this->fetchRedSys(json_encode($petition), true);
+//
+//        if ( $threeDsMethod instanceof Emv3DS)
+//        {
+//
+//            /* evaluo si tiene o no url */
+//            if ( $threeDsMethod->getThreeDSMethodURL() )
+//            {
+//                /* realizo el envío del form */
+//                $this->threeDsMethodMakeRequest( $threeDsMethod->getThreeDSMethodData(), $threeDsMethod->getThreeDSMethodURL() );
+//
+//                $this->autorizationPayLoadRepository->save($autorization, true);
+//
+//            } else {
+//
+//                /* paso directo a la petición */
+//
+//            }
+//        }
 
 
-        //realizo la peticion
-        $threeDsMethod = $this->fetchRedSys(json_encode($petition), true);
-
-        if ( $threeDsMethod instanceof Emv3DS)
-        {
-
-            /* evaluo si tiene o no url */
-            if ( $threeDsMethod->getThreeDSMethodURL() )
-            {
-                /* realizo el envío del form */
-                $this->threeDsMethodMakeRequest( $threeDsMethod->getThreeDSMethodData(), $threeDsMethod->getThreeDSMethodURL() );
-
-                $this->autorizationPayLoadRepository->save($autorization, true);
-
-            } else {
-
-                /* paso directo a la petición */
-
-            }
-        }
 
         return $this->json($this->fetchRedSys(json_encode($petition), true), Response::HTTP_OK);
 
@@ -187,6 +193,7 @@ class RedsysController extends AbstractController
 
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/autorizacion', name: 'app_redsys_send_api', methods: 'post')]
     public function sendAutorization(#[MapRequestPayload] AutorizationPayLoad $autorizationPayLoad): Response
     {
@@ -198,12 +205,12 @@ class RedsysController extends AbstractController
         //++++ se usarán en caso de ser challenge
         $this->token                = $autorizationPayLoad->getToken();
         $this->amount               = $autorizationPayLoad->getAmount();
-        $this->order                = $autorizationPayLoad->getOrder();
+        $this->order                = $autorizationPayLoad->getOrderId();
          //++++
 
         //Realizo el cuerpo de peticion en función de lo que solicite el front
 
-        $petition = $this->autorizationRest($autorizationPayLoad->getOrder(),
+        $petition = $this->autorizationRest($autorizationPayLoad->getOrderId(),
             '0',
             $autorizationPayLoad->getAmount(),
             $autorizationPayLoad->getToken(),
@@ -216,6 +223,7 @@ class RedsysController extends AbstractController
 
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/devolucion', name: 'app_redsys_devoluciones_api', methods: 'post')]
     public function devolucion(Request $request): Response
     {
@@ -261,6 +269,7 @@ class RedsysController extends AbstractController
 
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/confirmacion_autorizacion', name: 'app_redsys_confirmacion_api', methods: 'post')]
     public function confirmacionAutorization(#[MapRequestPayload] ConfirmationPayLoad $confirmationPayLoad): Response
     {
@@ -564,6 +573,8 @@ class RedsysController extends AbstractController
 
         }
     }
+
+    #[IsGranted('ROLE_USER')]
     #[Route('/challenge/{acsURL}/{creq}/{MD}/{termUrl}', name: 'app_redsys_challenge')]
     public function challenge(string $acsURL, string $creq, ?string $MD = null, ?string $termUrl = null): Response
     {
@@ -594,7 +605,7 @@ class RedsysController extends AbstractController
     }
 
 
-    private function threeDsMethodMakeRequest(string $threeDSMethodData, string $threeDSMethodURL): Response
+/*    private function threeDsMethodMakeRequest(string $threeDSMethodData, string $threeDSMethodURL): Response
     {
 
         $form           = $this->createFormBuilder();
@@ -608,7 +619,7 @@ class RedsysController extends AbstractController
         ]);
 
         dd($client->getContent());
-    }
+    }*/
 
     #[Route('/notificacionURL/{order}', name: 'app_redsys_notification')]
     public function notificacionURL(Request $request, string $order): Response

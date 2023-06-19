@@ -117,7 +117,7 @@ iniciar.addEventListener('click', function() {
             autorizacionPayLoad = {
                 token: token,
                 amount: '7878',
-                order: order.toString(),
+                orderId: order.toString(),
                 dsServerTransId: response.data.threeDServerTransID,
                 protocolVersion: response.data.protocolVersion,
                 dsMethodUrl: response.data.threeDSMethodURL
