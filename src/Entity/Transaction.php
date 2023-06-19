@@ -5,6 +5,9 @@ namespace App\Entity;
 use App\Repository\TransactionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
 #[HasLifecycleCallbacks]
@@ -175,5 +178,15 @@ class Transaction
         $this->authorized = $authorized;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        $encoders = [new JsonEncoder()];
+        $normalizers = [new ObjectNormalizer()];
+
+        $serializer = new Serializer($normalizers, $encoders);
+
+        return $serializer->serialize($this, 'json');
     }
 }
