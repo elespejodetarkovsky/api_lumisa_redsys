@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello HomeController!{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+
+    {% if transaccion != null %}
+
+        <H3>pago realizado correctamente</H3>
+
+    {% else %}
+
+        <H3>Algo ha ocurrido y no se concretó el pago</H3>
+
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    <script !src="">
+
+        window.transaccion = {{ transaccion ? transaccion | raw : '{}' }};
+
+    </script>
+{% endblock %}

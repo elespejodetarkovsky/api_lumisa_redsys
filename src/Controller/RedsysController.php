@@ -288,8 +288,17 @@ class RedsysController extends AbstractController
         /*
          * si ha ido bien devolverá el objeto transaction
          */
-        return $this->json($transaction, Response::HTTP_OK);
+        //return $this->json($transaction, Response::HTTP_OK);
 
+        /*
+         * si ha ido bien devolverá el objeto transaction
+         */
+
+            return $this->render('confirmacion_autorizacion/index.html.twig',[
+
+                'transaccion' => $transaction instanceof Transaction ? $transaction : null
+
+            ]);
 
     }
 
@@ -662,8 +671,13 @@ class RedsysController extends AbstractController
             /*
              * si ha ido bien devolverá el objeto transaction
              */
-            return $this->json($transaction, Response::HTTP_OK);
+            //return $this->json($transaction, Response::HTTP_OK);
 
+            return $this->render('confirmacion_autorizacion/index.html.twig',[
+
+                'transaccion' => $transaction instanceof Transaction ? $transaction : null
+
+            ]);
 
         } else {
 
