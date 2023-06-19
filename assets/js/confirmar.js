@@ -4,6 +4,7 @@ const confirmar = document.getElementById("confirmar");
 
 confirmar.addEventListener('click', function (){
 
+    console.log('confirmation pay load');
     console.log( window.confirmationPayLoad );
 
     let config = {

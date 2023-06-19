@@ -7,36 +7,55 @@ use App\Repository\AutorizationPayLoadRepository;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Doctrine\ORM\Mapping as ORM;
 
+#[ORM\Entity(repositoryClass: AutorizationPayLoadRepository::class)]
+#[UniqueEntity(['token'])]
 class AutorizationPayLoad
 {
 
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 255, unique: true)]
     private string $token;
 
+    #[ORM\Column(length: 20)]
     private string $amount;
 
-    private string $order;
+    #[ORM\Column(length: 255)]
+    private string $orderId;
 
-    private string $dsServerTransId;
-    private string $protocolVersion;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $dsServerTransId = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $protocolVersion = null;
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $dsMethodUrl = null;
 
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
 
     /**
      * @return string
      */
-    public function getOrder(): string
+    public function getOrderId(): string
     {
-        return $this->order;
+        return $this->orderId;
     }
 
     /**
      * @param string $order
      * @return AutorizationPayLoad
      */
-    public function setOrder(string $order): AutorizationPayLoad
+    public function setOrderId(string $orderId): self
     {
-        $this->order = $order;
+        $this->orderId = $orderId;
+
         return $this;
     }
 
@@ -53,9 +72,10 @@ class AutorizationPayLoad
      * @param string $token
      * @return AutorizationPayLoad
      */
-    public function setToken(string $token): AutorizationPayLoad
+    public function setToken(string $token): self
     {
         $this->token = $token;
+
         return $this;
     }
 
@@ -71,16 +91,17 @@ class AutorizationPayLoad
      * @param string $amount
      * @return AutorizationPayLoad
      */
-    public function setAmount(string $amount): AutorizationPayLoad
+    public function setAmount(string $amount): self
     {
         $this->amount = $amount;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getDsServerTransId(): string
+    public function getDsServerTransId(): ?string
     {
         return $this->dsServerTransId;
     }
@@ -89,16 +110,17 @@ class AutorizationPayLoad
      * @param string $dsServerTransId
      * @return AutorizationPayLoad
      */
-    public function setDsServerTransId(string $dsServerTransId): AutorizationPayLoad
+    public function setDsServerTransId(?string $dsServerTransId): self
     {
         $this->dsServerTransId = $dsServerTransId;
+
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getProtocolVersion(): string
+    public function getProtocolVersion(): ?string
     {
         return $this->protocolVersion;
     }
@@ -107,9 +129,10 @@ class AutorizationPayLoad
      * @param string $protocolVersion
      * @return AutorizationPayLoad
      */
-    public function setProtocolVersion(string $protocolVersion): AutorizationPayLoad
+    public function setProtocolVersion(?string $protocolVersion): self
     {
         $this->protocolVersion = $protocolVersion;
+
         return $this;
     }
 
@@ -125,7 +148,7 @@ class AutorizationPayLoad
      * @param string $dsMethodUrl
      * @return AutorizationPayLoad
      */
-    public function setDsMethodUrl(?string $dsMethodUrl = null): AutorizationPayLoad
+    public function setDsMethodUrl(?string $dsMethodUrl = null): self
     {
         $this->dsMethodUrl = $dsMethodUrl;
 

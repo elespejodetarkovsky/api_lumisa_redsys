@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class NotificationController extends AbstractController
 {
 
-    public function __construct( private NotificationUrlRepository $notificationUrlRepository )
+    public function __construct()
     {
     }
 
@@ -39,53 +39,53 @@ class NotificationController extends AbstractController
 
     }
 
-    #[Route('/notificacionURL/{order}', name: 'app_redsys_notification')]
-    public function notificacionURL(Request $request, string $order): Response
-    {
-        //si todo ha ido bien recibiré el parámetro cres para hacer la petición final
-        $cres               = $request->request->get('cres');
-
-        //el valor debería ser único
-            $notificacionUrl    = $this->notificationUrlRepository->findOneBy(['orderId' => $order]);
-
-            if ( !$notificacionUrl == null )
-            {
-
-                //existe en la base de datos el order
-                $notificacionUrl->setCres( $cres );
-
-                $emv3DS = array('threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
-                    'cres' =>  $cres);
-
-
-
-                //TODO si todo sale bien se borrará luego
-                $this->notificationUrlRepository->save($notificacionUrl, true);
-
-                /*
-                 * se devuelve el objeto que se usará para hacer la llamada final de confirmación
-                 */
-
-                $confirmation = new ConfirmationPayLoad();
-
-                $confirmation->setAmount($notificacionUrl->getAmount())
-                    ->setOrderId($notificacionUrl->getOrderId())
-                    ->setIdOper($notificacionUrl->getIdOper())
-                    ->setTransactionType('0')
-                    ->setEmv3DS($emv3DS);
-
-                $this->redirectToRoute('/api/confirmacion_autorizacion', $confirmation);
-                //return $this->json($confirmation, Response::HTTP_OK);
-//                return $this->render('confirmation/index.html.twig',
-//                [
-//                   'confirmationPayLoad' => $confirmation->toJson()
-//                ]);
-
-            } else {
-
-                return $this->json(['error' => 'el order solicitado no se encuentra en la base de datos'], Response::HTTP_OK);
-
-            }
-
-    }
+//    #[Route('/notificacionURL/{order}', name: 'app_redsys_notification')]
+//    public function notificacionURL(Request $request, string $order): Response
+//    {
+//        //si todo ha ido bien recibiré el parámetro cres para hacer la petición final
+//        $cres               = $request->request->get('cres');
+//
+//        //el valor debería ser único
+//            $notificacionUrl    = $this->notificationUrlRepository->findOneBy(['orderId' => $order]);
+//
+//            if ( !$notificacionUrl == null )
+//            {
+//
+//                //existe en la base de datos el order
+//                $notificacionUrl->setCres( $cres );
+//
+//                $emv3DS = array('threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
+//                    'cres' =>  $cres);
+//
+//
+//
+//                //TODO si todo sale bien se borrará luego
+//                $this->notificationUrlRepository->save($notificacionUrl, true);
+//
+//                /*
+//                 * se devuelve el objeto que se usará para hacer la llamada final de confirmación
+//                 */
+//
+//                $confirmation = new ConfirmationPayLoad();
+//
+//                $confirmation->setAmount($notificacionUrl->getAmount())
+//                    ->setOrderId($notificacionUrl->getOrderId())
+//                    ->setIdOper($notificacionUrl->getIdOper())
+//                    ->setTransactionType('0')
+//                    ->setEmv3DS($emv3DS);
+//
+//                $this->redirectToRoute('/api/confirmacion_autorizacion', $confirmation);
+//                //return $this->json($confirmation, Response::HTTP_OK);
+////                return $this->render('confirmation/index.html.twig',
+////                [
+////                   'confirmationPayLoad' => $confirmation->toJson()
+////                ]);
+//
+//            } else {
+//
+//                return $this->json(['error' => 'el order solicitado no se encuentra en la base de datos'], Response::HTTP_OK);
+//
+//            }
+//
+//    }
 }
