@@ -173,8 +173,6 @@ class RedsysController extends AbstractController
 //            }
 //        }
 
-
-
         return $this->json($this->fetchRedSys(json_encode($petition), true), Response::HTTP_OK);
 
     }
@@ -361,6 +359,8 @@ class RedsysController extends AbstractController
             //recibirá en la respuesta el parámetro ds_emv3ds que será serializado para la respuesta
             //y decidir en función de la evaluación del riesgo y limites de la entidad bancaria del cliente
             //TODO EVALUAR FIRMA
+
+            dd($decode);
 
             $objEmv3ds = new Emv3DS();
 

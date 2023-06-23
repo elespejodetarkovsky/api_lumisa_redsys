@@ -52,6 +52,7 @@ class Challenge
 
         //dd($outDsEmv3DS);
 
+        /*TODO cambiar aquí en funcion del protocolversion y devolver el challenge*/
         $emv3ds->setAcsURL($outDsEmv3DS['acsURL'])
             ->setCreq($outDsEmv3DS['creq'])
             ->setProtocolVersion($outDsEmv3DS['protocolVersion'])
