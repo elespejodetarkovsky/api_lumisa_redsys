@@ -6,15 +6,75 @@ class OutDsEmv3DS
 {
     private string $threeDSInfo;
     private string $protocolVersion;
-    private string $acsURL;
-    private string $creq;
+    private ?string $acsURL;
+    private ?string $creq;
 
+    /*para version 1.0.2*/
+    private ?string $pareq;
+    private ?string $md;
+    private ?string $termUrl;
+
+
+
+    /**
+     * @return string|null
+     */
+    public function getTermUrl(): ?string
+    {
+        return $this->termUrl;
+    }
+
+    /**
+     * @param string|null $termUrl
+     * @return OutDsEmv3DS
+     */
+    public function setTermUrl(?string $termUrl): OutDsEmv3DS
+    {
+        $this->termUrl = $termUrl;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getPareq(): ?string
+    {
+        return $this->pareq;
+    }
+
+    /**
+     * @param string|null $pareq
+     * @return OutDsEmv3DS
+     */
+    public function setPareq(?string $pareq): OutDsEmv3DS
+    {
+        $this->pareq = $pareq;
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getMd(): ?string
+    {
+        return $this->md;
+    }
+
+    /**
+     * @param string|null $md
+     * @return OutDsEmv3DS
+     */
+    public function setMd(?string $md): OutDsEmv3DS
+    {
+        $this->md = $md;
+        return $this;
+    }
 
 
     /**
      * @return string
      */
-    public function getCreq(): string
+    public function getCreq(): ?string
     {
         return $this->creq;
     }
@@ -23,7 +83,7 @@ class OutDsEmv3DS
      * @param string $creq
      * @return OutDsEmv3DS
      */
-    public function setCreq(string $creq): OutDsEmv3DS
+    public function setCreq(?string $creq): OutDsEmv3DS
     {
         $this->creq = $creq;
         return $this;
@@ -70,7 +130,7 @@ class OutDsEmv3DS
     /**
      * @return string
      */
-    public function getAcsURL(): string
+    public function getAcsURL(): ?string
     {
         return $this->acsURL;
     }
@@ -79,7 +139,7 @@ class OutDsEmv3DS
      * @param string $acsURL
      * @return OutDsEmv3DS
      */
-    public function setAcsURL(string $acsURL): OutDsEmv3DS
+    public function setAcsURL(?string $acsURL): OutDsEmv3DS
     {
         $this->acsURL = $acsURL;
         return $this;

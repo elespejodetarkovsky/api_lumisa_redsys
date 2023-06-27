@@ -173,8 +173,6 @@ class RedsysController extends AbstractController
 //            }
 //        }
 
-
-
         return $this->json($this->fetchRedSys(json_encode($petition), true), Response::HTTP_OK);
 
     }
@@ -214,8 +212,10 @@ class RedsysController extends AbstractController
             '0',
             $autorizationPayLoad->getAmount(),
             $autorizationPayLoad->getToken(),
-            Util::makeMerchantEmv3ds(!($autorizationPayLoad->getDsMethodUrl() == null), $autorizationPayLoad->getDsServerTransId(),
-                $this->order, $autorizationPayLoad->getProtocolVersion(), $this->getParameter('app.url.notification'))
+
+            Util::makeMerchantEmv3ds(!($autorizationPayLoad->getDsMethodUrl() == null),
+                $this->order, $autorizationPayLoad->getProtocolVersion(),
+                $this->getParameter('app.url.notification'), $autorizationPayLoad->getDsServerTransId())
         );
 
 
@@ -284,21 +284,15 @@ class RedsysController extends AbstractController
 
         $transaction = $this->fetchRedSys(json_encode($petition));
 
-
-        /*
-         * si ha ido bien devolverá el objeto transaction
-         */
-        //return $this->json($transaction, Response::HTTP_OK);
-
         /*
          * si ha ido bien devolverá el objeto transaction
          */
 
-            return $this->render('confirmacion_autorizacion/index.html.twig',[
+        return $this->render('confirmacion_autorizacion/index.html.twig',[
 
-                'transaccion' => $transaction instanceof Transaction ? $transaction : null
+            'transaccion' => $transaction instanceof Transaction ? $transaction : null
 
-            ]);
+        ]);
 
     }
 
@@ -353,14 +347,10 @@ class RedsysController extends AbstractController
             $signatureRecibida = $arrayResponde["Ds_Signature"];
 
             //obtengo los datos de forma separada
-            $decode             = $this->redsysAPI->decodeMerchantParameters($params);
+            $decode             = json_decode($this->redsysAPI->decodeMerchantParameters($params), true);
 
-            $emv3ds             = $this->redsysAPI->getParameter('Ds_EMV3DS');
-            $cardPSD2           = $this->redsysAPI->getParameter('Ds_Card_PSD2');
-
-            //recibirá en la respuesta el parámetro ds_emv3ds que será serializado para la respuesta
-            //y decidir en función de la evaluación del riesgo y limites de la entidad bancaria del cliente
-            //TODO EVALUAR FIRMA
+            $emv3ds             = $decode['Ds_EMV3DS']; //$this->redsysAPI->getParameter('Ds_EMV3DS');
+            $cardPSD2           = $decode['Ds_Card_PSD2']; //$this->redsysAPI->getParameter('Ds_Card_PSD2');
 
             $objEmv3ds = new Emv3DS();
 
@@ -371,6 +361,14 @@ class RedsysController extends AbstractController
                 ->setThreeDServerTransID($emv3ds['threeDSServerTransID'])
                 ->setThreeDSMethodURL($threeDSMethodURL)
                 ->setCardPSD2($cardPSD2);
+
+            /*en caso de no recibir este parámetro se deja un log*/
+            if ($emv3ds['threeDSServerTransID'] == null)
+            {
+
+                $this->logger->error('APP: no se ha recibido el parámetro transID '.$this->redsysAPI->decodeMerchantParameters($params));
+
+            }
 
             //en caso de recibir el MethodUrl debemos devolver el json para enviar al formulario
             if ( !$threeDSMethodURL == null )
@@ -482,8 +480,6 @@ class RedsysController extends AbstractController
             //obtengo los datos de forma separada
             $decode             = $this->redsysAPI->decodeMerchantParameters($params);
 
-            $this->logger->info('DECODE:'.$decode);
-
 
             $codigoRespuesta    = $this->redsysAPI->getParameter('Ds_Response');
             $cardNumber         = $this->redsysAPI->getParameter('Ds_CardNumber') ?? '****';
@@ -500,6 +496,7 @@ class RedsysController extends AbstractController
             {
                 if( $dsEmv3DS['threeDSInfo'] == 'ChallengeRequest' && $codigoRespuesta == null )
                 {
+
                     $challenge = new Challenge();
 
                     $challenge->setAmount($amount)
@@ -507,20 +504,21 @@ class RedsysController extends AbstractController
                         ->setOrder($order)
                         ->setMerchantCode($this->getParameter('app.fuc'))
                         ->setTerminal($this->getParameter('app.terminal'))
-                        ->setOutDsEmv3DS($dsEmv3DS);
+                        ->setOutDsEmv3DS($dsEmv3DS, $this->getParameter('app.url.notification').$order);
 
-                    //guardaré antes de enviar el challenge los datos que requeriré
-                    //para enviar la confirmación final con el cres obtenido del banco
+                    /* guardaré antes de enviar el challenge los datos que requeriré
+                    para enviar la confirmación final con el cres obtenido del banco */
+
                     $notificacionUrl = new NotificationUrl();
+
                     $notificacionUrl->setAmount($amount)
                         ->setOrderId($order)
                         ->setIdOper($this->token)
                         ->setProtocolVersion($dsEmv3DS['protocolVersion']);
 
-                    //luegcuando reciba el cres lo agregaré y haré la redireccion de exito si fue bien
-
                     $this->notificationUrlRepository->save($notificacionUrl, true);
 
+                    $this->logger->info('APP Info: Challenge'. $decode);
 
                     return $challenge;
 
@@ -555,6 +553,17 @@ class RedsysController extends AbstractController
                     $this->entityManager->persist($transaction);
                     $this->entityManager->flush();
 
+                    /*elimino la notificacion en la base de datos ya que se ha completado la transaccion
+                    y se ha registrado*/
+
+                    $notificacion = $this->notificationUrlRepository->findOneBy(['idOper' => $this->token]);
+
+                    /*si la operación fue frictionless no existirá la notificacion*/
+                    if ( isset( $notificacion ) )
+                    {
+                        $this->notificationUrlRepository->remove($notificacion, true);
+                    }
+
                     return $transaction;
 
                 } else {
@@ -563,8 +572,6 @@ class RedsysController extends AbstractController
 
             } elseif ( $codigoRespuesta == '0195' )
             {
-
-                //TODO Redirigir a PSD2?
                 return '{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
 
             } elseif ( $codigoRespuesta == '0900' )
@@ -575,7 +582,7 @@ class RedsysController extends AbstractController
             } else
             {
 
-                //OTRO ERROR, DE AUTENTICACION, RECHAZO POR CLIENTE ETC
+                /* OTRO ERROR, DE AUTENTICACION, RECHAZO POR CLIENTE ETC */
                 return '{"'.$codigoRespuesta.'":"'.$this->dsResponseRepository->findOneBy(['codigo' => $codigoRespuesta]).'"}';
 
             }
@@ -613,31 +620,19 @@ class RedsysController extends AbstractController
 
     }
 
-
-/*    private function threeDsMethodMakeRequest(string $threeDSMethodData, string $threeDSMethodURL): Response
-    {
-
-        $form           = $this->createFormBuilder();
-        $formData       = new FormDataPart(
-            [
-                'threeDSMethodData'     => $threeDSMethodData
-            ]);
-
-        $client = $this->client->request('POST', $threeDSMethodURL, [
-            'body' => [ 'threeDSMethodData' => $threeDSMethodData ] //$formData->bodyToString()
-        ]);
-
-        dd($client->getContent());
-    }*/
-
     #[Route('/notificacionURL/{order}', name: 'app_redsys_notification')]
     public function notificacionURL(Request $request, string $order): Response
     {
 
-        /* debe recibirse el parámetro cres */
-        $cres               = $request->request->get('cres');
+        /* version 2.x.0 */
+        $cres               = $request->request->get('cres') ?? null;
 
-        if ( $cres == null )
+        /* version 1.0.2 */
+        $pares              = $request->request->get('PaRes') ?? null;
+        $md                 = $request->request->get('MD') ?? null;
+
+        /* la llamada no es correcta */
+        if ( $cres == null && $pares == null )
         {
             return $this->json(['error' => 'llamada incompleta'], Response::HTTP_OK);
         }
@@ -648,18 +643,24 @@ class RedsysController extends AbstractController
         if ( !$notificacionUrl == null )
         {
 
-            //existe en la base de datos el order
-            $notificacionUrl->setCres( $cres );
+            /* realizo la llamada en funcion de la versión 1 o 2 */
 
-            $emv3DS = array('threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
-                'cres' =>  $cres);
+            if ( $notificacionUrl->getProtocolVersion() != '1.0.2' )
+            {
+
+                $emv3DS = array( 'threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
+                    'cres' =>  $cres );
+
+            } else {
+
+                $emv3DS = array( 'threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
+                    'PARes' =>  $pares, 'MD' => $md );
+            }
 
 
-            //TODO si todo sale bien se borrará luego
             $this->notificationUrlRepository->save($notificacionUrl, true);
 
             /* armo la peticion(autorizacion) final */
-
             $petition = $this->autorizationRest($notificacionUrl->getOrderId(),'0', $notificacionUrl->getAmount(),
                 $notificacionUrl->getIdOper(), $emv3DS);
 
@@ -671,7 +672,6 @@ class RedsysController extends AbstractController
             /*
              * si ha ido bien devolverá el objeto transaction
              */
-            //return $this->json($transaction, Response::HTTP_OK);
 
             return $this->render('confirmacion_autorizacion/index.html.twig',[
 

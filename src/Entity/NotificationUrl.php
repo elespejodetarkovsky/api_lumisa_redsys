@@ -20,10 +20,6 @@ class NotificationUrl
 
     #[ORM\Column(length: 20)]
     private ?string $amount = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $cres = null;
-
     #[ORM\Column(length: 255, unique: true)]
     private ?string $idOper = null;
 
@@ -32,6 +28,9 @@ class NotificationUrl
 
     #[ORM\Column(length: 20)]
     private ?string $protocolVersion = null;
+
+
+
 
     public function __construct()
     {
@@ -63,18 +62,6 @@ class NotificationUrl
     public function setAmount(string $amount): self
     {
         $this->amount = $amount;
-
-        return $this;
-    }
-
-    public function getCres(): ?string
-    {
-        return $this->cres;
-    }
-
-    public function setCres(?string $cres): self
-    {
-        $this->cres = $cres;
 
         return $this;
     }
