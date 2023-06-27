@@ -2,7 +2,11 @@ let tratar          = document.getElementById('tratar');
 let iniciar         = document.getElementById('iniciar');
 let devolucion      = document.getElementById('devolucion');
 let formChallenge   = document.getElementById('frmChallenge');
+let formChallenge1  = document.getElementById('frmChallenge1');
 let creq            = document.getElementById('creq');
+let pareq           = document.getElementById('PaReq');
+let md              = document.getElementById('MD');
+let termURL         = document.getElementById('TermUrl');
 
 
 let order;
@@ -84,14 +88,26 @@ tratar.addEventListener('click', function()
 
                 if ( response.data.outDsEmv3DS )
                 {
-                    //existe por tanto es un challenge asumo que es 2.x.0
-                    console.log( response.data.outDsEmv3DS );
-                    formChallenge.action    = response.data.outDsEmv3DS.acsURL;
-                    creq.value         = response.data.outDsEmv3DS.creq;
+                    //version 2
+                    if ( response.data.version !== '1' )
+                    {
 
-                    console.log( response.data )
+                        console.log( response.data.outDsEmv3DS );
+                        formChallenge.action    = response.data.outDsEmv3DS.acsURL;
+                        creq.value         = response.data.outDsEmv3DS.creq;
+                        formChallenge.submit();
 
-                    formChallenge.submit();
+                    } else {
+
+                        console.log( response.data.outDsEmv3DS );
+                        formChallenge1.action    = response.data.outDsEmv3DS.acsURL;
+                        pareq.value             = response.data.outDsEmv3DS.pareq;
+                        md.value                = response.data.outDsEmv3DS.md;
+                        termURL.value           = response.data.outDsEmv3DS.termUrl;
+
+                        formChallenge1.submit();
+
+                    }
 
                 } else
                 {

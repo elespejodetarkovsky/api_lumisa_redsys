@@ -6,6 +6,7 @@ class Challenge
 {
     private bool $challenge = true;
     private string $amount;
+    private ?string $version;
     private string $currency;
     private string $order;
     private string $merchantCode;
@@ -13,6 +14,27 @@ class Challenge
     private string $transactionType;
 
     private OutDsEmv3DS $outDsEmv3DS;
+
+
+
+    /**
+     * @return string|null
+     */
+    public function getVersion(): ?string
+    {
+        return $this->version;
+    }
+
+    /**
+     * @param string|null $version
+     * @return Challenge
+     */
+    public function setVersion(?string $version = '2'): Challenge
+    {
+        $this->version = $version;
+
+        return $this;
+    }
 
     /**
      * @return bool
@@ -44,7 +66,7 @@ class Challenge
      * @param OutDsEmv3DS $outDsEmv3DS
      * @return Challenge
      */
-    public function setOutDsEmv3DS(array $outDsEmv3DS): Challenge
+    public function setOutDsEmv3DS(array $outDsEmv3DS, ?string $notificationVersion1 = null): Challenge
     {
         //TODO colocar valores de la devolucion
 
@@ -53,10 +75,24 @@ class Challenge
         //dd($outDsEmv3DS);
 
         /*TODO cambiar aquí en funcion del protocolversion y devolver el challenge*/
-        $emv3ds->setAcsURL($outDsEmv3DS['acsURL'])
-            ->setCreq($outDsEmv3DS['creq'])
-            ->setProtocolVersion($outDsEmv3DS['protocolVersion'])
-            ->setThreeDSInfo($outDsEmv3DS['threeDSInfo']);
+        if ( $outDsEmv3DS['protocolVersion'] != '1.0.2' )
+        {
+
+            $emv3ds->setAcsURL($outDsEmv3DS['acsURL'])
+                ->setCreq($outDsEmv3DS['creq'])
+                ->setProtocolVersion($outDsEmv3DS['protocolVersion'])
+                ->setThreeDSInfo($outDsEmv3DS['threeDSInfo']);
+
+        } else {
+
+            //será 1.0.2 y se devolcerá el challenge para el mismo
+            $this->setVersion('1');
+            $emv3ds->setAcsURL($outDsEmv3DS['acsURL'])
+                ->setPareq($outDsEmv3DS['PAReq'])
+                ->setMd($outDsEmv3DS['MD'])
+                ->setTermUrl($notificationVersion1);
+        }
+
 
         $this->outDsEmv3DS = $emv3ds;
 

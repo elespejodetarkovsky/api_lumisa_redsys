@@ -8,9 +8,31 @@ class OutDsEmv3DS
     private string $protocolVersion;
     private ?string $acsURL;
     private ?string $creq;
+
+    /*para version 1.0.2*/
     private ?string $pareq;
     private ?string $md;
+    private ?string $termUrl;
 
+
+
+    /**
+     * @return string|null
+     */
+    public function getTermUrl(): ?string
+    {
+        return $this->termUrl;
+    }
+
+    /**
+     * @param string|null $termUrl
+     * @return OutDsEmv3DS
+     */
+    public function setTermUrl(?string $termUrl): OutDsEmv3DS
+    {
+        $this->termUrl = $termUrl;
+        return $this;
+    }
 
     /**
      * @return string|null

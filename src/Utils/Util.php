@@ -6,8 +6,8 @@ use phpDocumentor\Reflection\Types\This;
 
 class Util
 {
-    static public function makeMerchantEmv3ds(bool $threeDsCompInd, string $threDSServerTransId,
-                                              string $order, string $protocolVersion, string $notificationUrl): array
+    static public function makeMerchantEmv3ds(bool $threeDsCompInd, string $order,
+                                              string $protocolVersion, string $notificationUrl, ?string $threDSServerTransId = null): array
     {
 
         /*
