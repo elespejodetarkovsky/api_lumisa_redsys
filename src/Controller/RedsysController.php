@@ -651,10 +651,15 @@ class RedsysController extends AbstractController
                 $emv3DS = array( 'threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
                     'cres' =>  $cres );
 
+                $this->logger->info('APP NOTIFICACION order: '.$order.' '.json_encode($emv3DS));
+
             } else {
 
                 $emv3DS = array( 'threeDSInfo' => 'ChallengeResponse', 'protocolVersion' => $notificacionUrl->getProtocolVersion(),
                     'PARes' =>  $pares, 'MD' => $md );
+
+                $this->logger->info('APP NOTIFICACION order: '.$order.' '.json_encode($emv3DS));
+
             }
 
 
@@ -666,6 +671,8 @@ class RedsysController extends AbstractController
 
             $this->token = $notificacionUrl->getIdOper();
 
+            $this->logger->info('APP PETICION FINAL: '.$petition);
+            
             $transaction = $this->fetchRedSys(json_encode($petition));
 
 
