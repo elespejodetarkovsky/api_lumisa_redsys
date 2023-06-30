@@ -469,6 +469,7 @@ class RedsysController extends AbstractController
         if (array_key_exists('errorCode', $arrayResponde))
         {
 
+            $this->logger->error('APP ERROR RESPONSE: '.json_encode($arrayResponde));
             return $this->errorRepository->findOneBy(['sisoxxx' => $arrayResponde['errorCode']]);
 
         } else {
