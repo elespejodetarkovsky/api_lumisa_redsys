@@ -488,6 +488,8 @@ class RedsysController extends AbstractController
             $dsEmv3DS           = $this->redsysAPI->getParameter('Ds_EMV3DS') ?? null;
             $order              = $this->redsysAPI->getParameter('Ds_Order');
 
+            $this->logger->info('APP INFO DECODE RESPONSE: '.json_encode($decode));
+            
             //si es null Ds_Response y recibo la solicitud de challenge deberé gestionarlo
             //devolveré un objeto challenge
 
@@ -672,7 +674,7 @@ class RedsysController extends AbstractController
             $this->token = $notificacionUrl->getIdOper();
 
             $this->logger->info('APP PETICION FINAL: '.$petition);
-            
+
             $transaction = $this->fetchRedSys(json_encode($petition));
 
 
