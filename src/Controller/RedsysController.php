@@ -674,7 +674,7 @@ class RedsysController extends AbstractController
 
             $this->token = $notificacionUrl->getIdOper();
 
-            $this->logger->info('APP PETICION FINAL: '.$petition);
+            $this->logger->info('APP PETICION FINAL: '.json_encode($petition));
 
             $transaction = $this->fetchRedSys(json_encode($petition));
 
