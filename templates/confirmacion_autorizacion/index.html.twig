@@ -21,7 +21,8 @@
 {% block javascripts %}
     <script !src="">
 
-        window.transaccion = {{ transaccion ? transaccion | raw : '{}' }};
+        window.transaccion = {{ transaccion != null ? transaccion | raw : '{}' }};
+        window.postMessage({ finished: true }, "*");
 
     </script>
 {% endblock %}
