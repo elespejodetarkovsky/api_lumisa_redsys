@@ -19,10 +19,9 @@
 {% endblock %}
 
 {% block javascripts %}
-    <script !src="">
+    <script>
 
-        window.transaccion = {{ transaccion != null ? transaccion | raw : '{}' }};
-        window.postMessage({ finished: true }, "*");
+        window.parent.postMessage({ finished: {{ transaccion != null ? true : false }} }, "*");
 
     </script>
 {% endblock %}

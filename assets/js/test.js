@@ -7,6 +7,7 @@ let creq            = document.getElementById('creq');
 let pareq           = document.getElementById('PaReq');
 let md              = document.getElementById('MD');
 let termURL         = document.getElementById('TermUrl');
+let outIframe       = document.getElementById('redsysIframe');
 
 
 let order;
@@ -94,18 +95,20 @@ tratar.addEventListener('click', function()
 
                         console.log( response.data.outDsEmv3DS );
                         formChallenge.action    = response.data.outDsEmv3DS.acsURL;
-                        creq.value         = response.data.outDsEmv3DS.creq;
-                        formChallenge.submit();
+                        creq.value              = response.data.outDsEmv3DS.creq;
+                        //formChallenge.submit();
+                        outIframe.src = '/api/challengeTest/' + '2' + '/' + btoa(response.data.outDsEmv3DS.acsURL) + '/' + response.data.outDsEmv3DS.creq;
+                        outIframe.style.visibility = 'visible';
 
                     } else {
 
                         console.log( response.data.outDsEmv3DS );
                         formChallenge1.action    = response.data.outDsEmv3DS.acsURL;
-                        pareq.value             = response.data.outDsEmv3DS.pareq;
-                        md.value                = response.data.outDsEmv3DS.md;
-                        termURL.value           = response.data.outDsEmv3DS.termUrl;
+                        pareq.value              = response.data.outDsEmv3DS.pareq;
+                        md.value                 = response.data.outDsEmv3DS.md;
+                        termURL.value            = response.data.outDsEmv3DS.termUrl;
 
-                        formChallenge1.submit();
+                        //formChallenge1.submit();
 
                     }
 
@@ -150,7 +153,10 @@ iniciar.addEventListener('click', function() {
             {
                 //realizo la redireccion a 3dmethod url
                 //location.href = '/api/threeDsMethodTestForm/' + response.data.threeDSMethodData + '/' + btoa(response.data.threeDSMethodURL)
-                window.open('/api/threeDsMethodTestForm/' + response.data.threeDSMethodData + '/' + btoa(response.data.threeDSMethodURL), '_blank')
+                //window.open('/api/threeDsMethodTestForm/' + response.data.threeDSMethodData + '/' + btoa(response.data.threeDSMethodURL), '_blank')
+                outIframe.src = '/api/threeDsMethodForm/' + response.data.threeDSMethodData + '/' + btoa(response.data.threeDSMethodURL);
+                outIframe.style.visibility = 'visible';
+
             }
 
         })
@@ -161,6 +167,9 @@ iniciar.addEventListener('click', function() {
 
 window.addEventListener("message", function receiveMessage(event) {
     //se almacena en el input el token generado, o error en caso de que ocurra
+
+    console.log('evento:');
+    console.log(event);
 
     storeIdOper(event, "token", "errorCode", validaciones);
     token = document.getElementById('token').value;
