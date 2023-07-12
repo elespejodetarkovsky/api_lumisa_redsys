@@ -6,11 +6,20 @@
     <div class="container">
 
             <H1>3DSMethod Init</H1>
-            <form action="{{ threeDSMethodURL }}" method="POST" enctype="application/x-www-form-urlencoded">
+            <form id="formTreeDs" action="{{ threeDSMethodURL }}" method="POST" enctype="application/x-www-form-urlencoded">
                 <input type="hidden" name="threeDSMethodData" value="{{ threeDSMethodData }}">
                 <input type="submit">
             </form>
 
     </div>
-    <!-- /.container -->
+    <script>
+
+        window.addEventListener('load', function (){
+            //enviará el formulario al cargarse la página a la entidad bancaria
+            let formulario = document.getElementById('formTreeDs');
+
+            formulario.submit();
+        });
+
+    </script>
 {% endblock %}

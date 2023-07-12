@@ -727,9 +727,29 @@ class RedsysController extends AbstractController
              * si ha ido bien devolverá el objeto transaction
              */
 
+            if ( $transaction instanceof Transaction )
+            {
+
+                $error      = false;
+                $mensaje    = 'pago realizado correctamente';
+
+            } else {
+
+                $error      = true;
+                $mensaje    = json_decode( $transaction, true );
+
+                //solo habrá un valor
+                foreach ( $mensaje as $key => $value )
+                {
+                    $mensaje        = $value;
+                }
+
+            }
+
             return $this->render('confirmacion_autorizacion/index.html.twig',[
 
-                'transaccion' => $transaction instanceof Transaction ? $transaction : null
+                'error'         => $error,
+                'mensaje'       => $mensaje,
 
             ]);
 
