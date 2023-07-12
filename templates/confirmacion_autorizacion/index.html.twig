@@ -14,8 +14,8 @@
 {% block javascripts %}
     <script>
 
-        window.postMessage({ finished: {{ error ? 'false' : 'true' }} }, "*" );
-        window.postMessage({ mensaje: "{{ mensaje }}" }, "*" );
+        window.parent.postMessage({ finished: {{ error ? 'false' : 'true' }} }, "*" );
+        window.parent.postMessage({ mensaje: "{{ mensaje }}" }, "*" );
 
     </script>
 {% endblock %}
