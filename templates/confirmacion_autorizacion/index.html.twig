@@ -7,22 +7,15 @@
 
 {% block body %}
 
-    {% if transaccion != null %}
+        <H3>{{ mensaje }}</H3>
 
-        <H3>pago realizado correctamente</H3>
-
-    {% else %}
-
-        <H3>Algo ha ocurrido y no se concretó el pago</H3>
-
-    {% endif %}
 {% endblock %}
 
 {% block javascripts %}
-    <script !src="">
+    <script>
 
-        window.transaccion = {{ transaccion != null ? transaccion | raw : '{}' }};
-        window.postMessage({ finished: true }, "*");
+        window.parent.postMessage({ finished: {{ error ? 'false' : 'true' }} }, "*" );
+        window.parent.postMessage({ mensaje: "{{ mensaje }}" }, "*" );
 
     </script>
 {% endblock %}

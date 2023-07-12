@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello HomeController!{% endblock %}
+
+{% block body %}
+    <div class="container">
+
+        <H1>Autorizacion ThreeDSMethod</H1>
+        <p>la autorizacion ha ido: {{ trheeDSMethod }}</p>
+
+    </div>
+    <script>
+
+        window.parent.postMessage({ trheeDSMethod: {{ trheeDSMethod }} }, '*');
+
+    </script>
+{% endblock %}

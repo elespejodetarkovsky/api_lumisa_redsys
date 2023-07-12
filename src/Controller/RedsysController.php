@@ -610,7 +610,51 @@ class RedsysController extends AbstractController
 
     }
 
-    #[Route('/threeDsMethodTestForm/{threeDSMethodData}/{threeDSMethodURL}', name: 'app_redsys_challenge')]
+    #[IsGranted('ROLE_USER')]
+    #[Route('/challengeTest/{protocol}/{acsURL}/{creq}/{MD}/{termUrl}', name: 'app_redsys_challenge_test')]
+    public function challengeTest(string $protocol, string $acsURL, string $creq, ?string $MD = null, ?string $termUrl = null): Response
+    {
+        //Reenvío en el formulario el challenge en funcion del protocolo
+
+        if ( $protocol == '2' )
+        {
+
+            return $this->render('challenge/index.html.twig',
+                [
+                    'protocol'  => '2',
+                    'acsURL'    => urldecode(base64_decode($acsURL)),
+                    'creq'      => $creq
+                ]);
+
+        } else {
+
+            return $this->render('challenge/index.html.twig',
+            [
+                'protocol'  => '1',
+                'acsURL'    => urldecode(base64_decode($acsURL)),
+                'creq'      => $creq,
+                'MD'        => $MD,
+                'termUrl'   => urldecode(base64_decode($acsURL))
+            ]);
+
+        }
+
+
+    }
+/*    #[Route('/threeDsMethodTestForm/{threeDSMethodData}/{threeDSMethodURL}', name: 'app_redsys_challenge')]
+    public function threeDsMethod(Request $request, string $threeDSMethodData, string $threeDSMethodURL): Response
+    {
+
+
+        return $this->render('api/threeDSMethodForm.html.twig',
+            [
+                'threeDSMethodURL' => base64_decode($threeDSMethodURL),
+                'threeDSMethodData' => $threeDSMethodData
+            ]);
+
+    }*/
+
+    #[Route('/threeDsMethodForm/{threeDSMethodData}/{threeDSMethodURL}', name: 'app_redsys_challenge')]
     public function threeDsMethod(Request $request, string $threeDSMethodData, string $threeDSMethodURL): Response
     {
 
@@ -683,9 +727,29 @@ class RedsysController extends AbstractController
              * si ha ido bien devolverá el objeto transaction
              */
 
+            if ( $transaction instanceof Transaction )
+            {
+
+                $error      = false;
+                $mensaje    = 'pago realizado correctamente';
+
+            } else {
+
+                $error      = true;
+                $mensaje    = json_decode( $transaction, true );
+
+                //solo habrá un valor
+                foreach ( $mensaje as $key => $value )
+                {
+                    $mensaje        = $value;
+                }
+
+            }
+
             return $this->render('confirmacion_autorizacion/index.html.twig',[
 
-                'transaccion' => $transaction instanceof Transaction ? $transaction : null
+                'error'         => $error,
+                'mensaje'       => $mensaje,
 
             ]);
 
@@ -705,11 +769,23 @@ class RedsysController extends AbstractController
 
         //realizo una comparación entre el id del parámetro y el del post pasado por la entidad
         //se podría realizar alguna comprobación más tambien
+//        if ( $threeDSMethodDataJson['threeDSServerTransID'] == $threeDSMethodData )
+//        {
+//            return $this->json(['3DSMethod' => 'OK'], Response::HTTP_OK);
+//        } else {
+//            return $this->json(['3DSMethod' => 'KAO'], Response::HTTP_OK);
+//        }
         if ( $threeDSMethodDataJson['threeDSServerTransID'] == $threeDSMethodData )
         {
-            return $this->json(['3DSMethod' => 'OK'], Response::HTTP_OK);
+            return $this->render('api/threeDSMethodNotification.html.twig',
+            [
+                'trheeDSMethod' => true
+            ]);
         } else {
-            return $this->json(['3DSMethod' => 'KAO'], Response::HTTP_OK);
+            return $this->render('api/threeDsMethodNotification.html.twig',
+            [
+                'trheeDSMethod' => false
+            ]);
         }
 
     }
