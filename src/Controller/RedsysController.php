@@ -18,11 +18,9 @@ use App\Utils\Util;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\Mime\Part\Multipart\FormDataPart;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -87,17 +85,7 @@ class RedsysController extends AbstractController
 
     }
 
-    #[Route('/get_peticion_by_id_medusa/{id}', name: 'get_id_medusa_api')]
-    public function getMedusaIdObject(string $id): Response
-    {
-
-        //realizo la busqueda del objeto
-        $transaction = $this->entityManager->getRepository(Transaction::class)->findOneByIdMedusa($id);
-
-        return $this->json($transaction, Response::HTTP_OK);
-
-    }
-
+    #[IsGranted('ROLE_USER')]
     #[Route('/get_peticion_by_token/{token}', name: 'get_by_token_api')]
     public function getTransactionByToken(string $token): Response
     {
@@ -141,37 +129,6 @@ class RedsysController extends AbstractController
         $petition["Ds_MerchantParameters"]      = $params;
         $petition["Ds_Signature"]               = $signature;
 
-        /* armo la autorizationpayload que se utilizará para        */
-        /* recoger los datos en caso de ser 3DSMethod y necesitarlo */
-
-        /* TODO luego evaluará automáticamente si es necesario tratar o no
-//        $autorization = new AutorizationPayLoad();
-//
-//        $autorization->setToken($token)
-//            ->setAmount($amount)
-//            ->setOrderId($order);
-//
-//
-//        //realizo la peticion
-//        $threeDsMethod = $this->fetchRedSys(json_encode($petition), true);
-//
-//        if ( $threeDsMethod instanceof Emv3DS)
-//        {
-//
-//            /* evaluo si tiene o no url */
-//            if ( $threeDsMethod->getThreeDSMethodURL() )
-//            {
-//                /* realizo el envío del form */
-//                $this->threeDsMethodMakeRequest( $threeDsMethod->getThreeDSMethodData(), $threeDsMethod->getThreeDSMethodURL() );
-//
-//                $this->autorizationPayLoadRepository->save($autorization, true);
-//
-//            } else {
-//
-//                /* paso directo a la petición */
-//
-//            }
-//        }
 
         return $this->json($this->fetchRedSys(json_encode($petition), true), Response::HTTP_OK);
 
@@ -223,51 +180,51 @@ class RedsysController extends AbstractController
 
     }
 
-    #[IsGranted('ROLE_USER')]
-    #[Route('/devolucion', name: 'app_redsys_devoluciones_api', methods: 'post')]
-    public function devolucion(Request $request): Response
-    {
-
-        $payLoad    = json_decode($request->getContent(), true);
-        $idOper     = $payLoad['idOper'];
-        $order      = $payLoad['order'];
-        $amount     = $payLoad['amount'];
-
-        $transaction    = $this->entityManager->getRepository(Transaction::class)->findOneBy(['token' => $idOper, 'idOrder' => $order, 'cantidad' => $amount, 'authorized' => true]) ?? null;
-
-
-        if ( $transaction instanceof Transaction)
-        {
-            $petition       = $this->peticionDevolucion($order, $amount);
-
-            $responseDev    = $this->fetchRedSys(json_encode($petition));
-
-            if ( isset( $responseDev['0900']) )
-            {
-                $now = new \DateTimeImmutable('now');
-
-                /*ha sido exitosa la devolución se actualiza el estado en la db*/
-                $transaction->setEstado('0900')
-                    ->setTransactionType('3')
-                    ->setRespuesta('devolucion hecha correctamente el: '.$now->format('Y-m-d H:i:s'));
-
-                $this->entityManager->persist($transaction);
-                $this->entityManager->flush();
-
-            }
-
-            return $this->json( ['id' => $transaction->getId(), 'order' => $order,
-                'observaciones' => 'devolucion hecha correctamente'], Response::HTTP_OK);
-
-        } else {
-
-            return $this->json(['error' => 'la operacion no ha sido encontrada en la base de datos'], Response::HTTP_OK);
-
-        }
-
-
-
-    }
+//    #[IsGranted('ROLE_USER')]
+//    #[Route('/devolucion', name: 'app_redsys_devoluciones_api', methods: 'post')]
+//    public function devolucion(Request $request): Response
+//    {
+//
+//        $payLoad    = json_decode($request->getContent(), true);
+//        $idOper     = $payLoad['idOper'];
+//        $order      = $payLoad['order'];
+//        $amount     = $payLoad['amount'];
+//
+//        $transaction    = $this->entityManager->getRepository(Transaction::class)->findOneBy(['token' => $idOper, 'idOrder' => $order, 'cantidad' => $amount, 'authorized' => true]) ?? null;
+//
+//
+//        if ( $transaction instanceof Transaction)
+//        {
+//            $petition       = $this->peticionDevolucion($order, $amount);
+//
+//            $responseDev    = $this->fetchRedSys(json_encode($petition));
+//
+//            if ( isset( $responseDev['0900']) )
+//            {
+//                $now = new \DateTimeImmutable('now');
+//
+//                /*ha sido exitosa la devolución se actualiza el estado en la db*/
+//                $transaction->setEstado('0900')
+//                    ->setTransactionType('3')
+//                    ->setRespuesta('devolucion hecha correctamente el: '.$now->format('Y-m-d H:i:s'));
+//
+//                $this->entityManager->persist($transaction);
+//                $this->entityManager->flush();
+//
+//            }
+//
+//            return $this->json( ['id' => $transaction->getId(), 'order' => $order,
+//                'observaciones' => 'devolucion hecha correctamente'], Response::HTTP_OK);
+//
+//        } else {
+//
+//            return $this->json(['error' => 'la operacion no ha sido encontrada en la base de datos'], Response::HTTP_OK);
+//
+//        }
+//
+//
+//
+//    }
 
     #[IsGranted('ROLE_USER')]
     #[Route('/confirmacion_autorizacion', name: 'app_redsys_confirmacion_api', methods: 'post')]
@@ -521,8 +478,6 @@ class RedsysController extends AbstractController
 
                     $this->notificationUrlRepository->save($notificacionUrl, true);
 
-                    $this->logger->info('APP Info: Challenge'. $decode);
-
                     return $challenge;
 
                 }
@@ -769,12 +724,7 @@ class RedsysController extends AbstractController
 
         //realizo una comparación entre el id del parámetro y el del post pasado por la entidad
         //se podría realizar alguna comprobación más tambien
-//        if ( $threeDSMethodDataJson['threeDSServerTransID'] == $threeDSMethodData )
-//        {
-//            return $this->json(['3DSMethod' => 'OK'], Response::HTTP_OK);
-//        } else {
-//            return $this->json(['3DSMethod' => 'KAO'], Response::HTTP_OK);
-//        }
+
         if ( $threeDSMethodDataJson['threeDSServerTransID'] == $threeDSMethodData )
         {
             return $this->render('api/threeDSMethodNotification.html.twig',
